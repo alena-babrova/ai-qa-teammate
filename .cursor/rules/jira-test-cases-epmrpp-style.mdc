@@ -1,0 +1,48 @@
+---
+description: EPMRPP conventions for Jira-derived manual test cases (titles, steps, expected results, API, GA)
+alwaysApply: true
+---
+
+# Jira-derived test cases — EPMRPP style
+
+Reference suites (linked `Test` issues): [EPMRPP-91802](https://jiraeu.epam.com/browse/EPMRPP-91802), [EPMRPP-92258](https://jiraeu.epam.com/browse/EPMRPP-92258), [EPMRPP-93481](https://jiraeu.epam.com/browse/EPMRPP-93481).
+
+## When this applies
+
+Whenever the user asks to **create test cases from a Jira** story (or equivalent), match the conventions below. **Format only** — the **jira-story-test-cases-md** skill handles Jira fetch and deliverable shape (**`tests.json`** vs Markdown); use **this rule** as the default EPMRPP style (not a bare generic template).
+
+## Summary line (title)
+
+- **UI / functional:** `<Area>. <Page>. <Behavior>` — segments separated by **period + space**.
+- **Page naming:** Either `Projects page` or `"Projects"` page (quoted page name when it matches the nav label); modal/feature names in **double quotes** (`"Rename project"`).
+- **Permissions:** Insert an extra segment: `<Area>. <Page>. Permissions. <Behavior>` (e.g. Admin not assigned to project can still rename).
+- **Google Analytics:** `GA. <Scope>. <Page>. <Behavior>` (scope e.g. **Instance level**).
+- **API:** `API. <Controller name>. <Actor/role>. <Behavior>` — e.g. `API. Organization User Controller. Admin assigns Internal user to External organization`.
+- Use **technical identifiers** in titles when needed (`project.key`, `project.slug`).
+
+## Preconditions and steps
+
+- **Label variants:** `*Preconditions*:` or `*Pre-conditions:*` (hyphen allowed). Same for `*Steps*:`.
+- **Preconditions body (two acceptable patterns):**
+  - **Plain lines** (no `#`): fixture sentences such as `'Organization A' is created with at least one Project (e.g. Project1)`; use **single quotes** around org/project placeholders. Use `*italic*` for emphasis (`*External*`, `*not*`).
+  - **Numbered `# ` lines** (hash + space): same as [EPMRPP-91802](https://jiraeu.epam.com/browse/EPMRPP-91802) style when the team uses list preconditions throughout.
+- **Steps:** Each step on its own line with `# ` (a **leading space before `#`** is OK if matching a reference suite). Imperative voice.
+- **Navigation:** `Login to RP as Admin` (or **Administrator user is logged in** / **Login to RP as the user from the preconditions**); `Go to "All Users" page` **or** `Navigate to "Projects" page of the 'Organization A'`; meatball menu phrasing: `Click on meatball menu for a project` / `Click meatball menu for 'Project1'`; `Click on "Meatball" menu -> Select "…" option` where applicable.
+
+## API test steps and expectations
+
+- Point to **controller + HTTP method + path** (e.g. `Organizations User Controller --> POST/organizations/{org_id}/users`).
+- Include **request body** in steps as JSON when needed; call out path params (e.g. `org_id`, `user_id`).
+- Steps: **Send the request**, **Verify the response**; optional **DB** verification (`Go to DB -> "public" schema -> "organization_user" table` with example `SELECT`).
+- **Expected results:** HTTP **Code: 200** (or relevant), response/message bullets using `*`; schema/table outcomes (e.g. new row, role = *MEMBER*).
+
+## Expected results
+
+- Tie to **step numbers** (`3.`, `4.`, `6.`) — non-consecutive numbers are OK when one line bundles multiple checkpoints.
+- **Bullets:** use ` - ` (space-hyphen-space) **or** leading `*` lines (`* Team`) depending on reference; stay consistent within one test case.
+- UI inventory: control names in **double quotes**, **enabled** / **disabled** / **default**, success toasts (e.g. green bar text in quotes).
+
+## GA tests
+
+- Summary starts with **`GA.`**; include **scope** and **page** before the action.
+- Preconditions: Analytics ON, DevTools, `collect` payload checks when applicable.

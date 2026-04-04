@@ -1,0 +1,17 @@
+{
+  "jira": {
+    "apiVersion": "2",
+    "projectKey": "PROJ",
+    "testIssueType": "Test",
+    "linkTypeName": "Relates",
+    "linkInwardIsNewTest": true,
+    "customFields": {
+      "testSteps": "customfield_19206",
+      "expectedResult": "customfield_19207"
+    },
+    "idempotency": {
+      "skipIfLinkedAiTestsExist": true,
+      "descriptionMarkerTemplate": "ai_generated_from:{parentKey}"
+    }
+  }
+}

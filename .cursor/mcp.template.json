@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "atlassian-jira-dc": {
+      "command": "npx",
+      "args": ["-y", "@atlassian-dc-mcp/jira"],
+      "env": {
+        "JIRA_HOST": "{{JIRA_HOST}}",
+        "JIRA_API_TOKEN": "{{JIRA_API_TOKEN}}"
+      }
+    }
+  }
+}

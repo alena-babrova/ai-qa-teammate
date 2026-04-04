@@ -1,0 +1,6 @@
+.cursor/mcp.json
+generated/jira-tests/*
+!generated/jira-tests/.gitkeep
+.env
+.env.*
+node_modules/

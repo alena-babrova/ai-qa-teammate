@@ -1,0 +1,96 @@
+# Cursor Agent CLI (cursor-agent) runs ONLY in this GitHub Actions workflow.
+# Locally, use Cursor IDE with .cursor/rules and .cursor/mcp.json — do not run headless agent on dev machines.
+
+name: AI test generate
+
+on:
+  repository_dispatch:
+    types: [ai-test-generate]
+  workflow_dispatch:
+    inputs:
+      issue_key:
+        description: Jira issue key (e.g. PROJ-123)
+        required: true
+        type: string
+
+concurrency:
+  group: ai-test-generate-${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
+  cancel-in-progress: false
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ISSUE_KEY: ${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+    steps:
+      - name: Validate issue key
+        run: |
+          if [ -z "${ISSUE_KEY}" ]; then
+            echo "ISSUE_KEY is required (repository_dispatch client_payload.issue_key or workflow_dispatch input)."
+            exit 1
+          fi
+          if ! echo "${ISSUE_KEY}" | grep -qE '^[A-Z][A-Z0-9_]+-[0-9]+$'; then
+            echo "ISSUE_KEY must look like PROJ-123"
+            exit 1
+          fi
+          echo "ISSUE_KEY=${ISSUE_KEY}"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Render MCP config from template
+        run: node scripts/render-mcp-config.js
+
+      - name: Install Cursor Agent CLI
+        run: |
+          curl -fsSL https://cursor.com/install | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare output directory
+        run: mkdir -p "generated/jira-tests/${ISSUE_KEY}"
+
+      - name: Run Cursor Agent (headless)
+        env:
+          CI: "true"
+        run: |
+          if [ -z "${CURSOR_API_KEY}" ]; then
+            echo "CURSOR_API_KEY secret is not set."
+            exit 1
+          fi
+          if command -v cursor-agent >/dev/null 2>&1; then
+            AGENT_BIN=cursor-agent
+          elif command -v agent >/dev/null 2>&1; then
+            AGENT_BIN=agent
+          else
+            echo "Cursor Agent CLI not found on PATH after install."
+            exit 1
+          fi
+          PROMPT="$(node scripts/build-ci-prompt.js)"
+          "${AGENT_BIN}" -p "${PROMPT}" --print
+
+      - name: Publish tests to Jira (REST if MCP did not create issues)
+        run: node scripts/publish-if-needed.js "${ISSUE_KEY}"
+
+      - name: Upload generated output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-jira-tests-${{ env.ISSUE_KEY }}
+          path: generated/jira-tests/
+          if-no-files-found: ignore
+
+      - name: Notify Jira on failure
+        if: failure()
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/notify-jira-failure.js

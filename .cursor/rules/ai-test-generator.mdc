@@ -1,0 +1,85 @@
+---
+description: AI test generator — CI vs IDE, tests.json, MCP/REST, Jira story skill
+alwaysApply: true
+---
+
+# AI test generator — execution model
+
+## Cursor Agent CLI (headless)
+
+- Run **only** inside **GitHub Actions** (the workflow that installs the CLI and invokes it).
+- **Do not** add npm scripts, Makefile targets, or docs that tell people to run `cursor-agent` / `agent` on a laptop or CI other than that workflow.
+- **Do not** commit automation that shells out to the headless agent locally.
+
+## Local development (Cursor IDE)
+
+- Use **Cursor IDE** with this repository: **rules**, **`.cursor/skills/`**, **`.cursor/mcp.json`** (from **`.cursor/mcp.template.json`** via **`render-mcp-config.js`** or filled locally — gitignored), and Jira MCP.
+- You may hand-author or edit files under **`generated/jira-tests/<ISSUE_KEY>/`**; the **headless** generation step is CI-only.
+
+## Jira story test methodology (skill)
+
+- For **how** to derive manual tests from a Jira story (AC, Gherkin, scope, GA judgment, splitting cases, naming), follow **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+- In **GitHub Actions**, the skill’s **Headless CI** section **overrides** the Markdown deliverable — see that section when `CI=true`.
+
+## GitHub Actions — non-interactive
+
+- **Never** ask the user any blocking question. CI has no human in the loop.
+- Apply **Path A (default RPP)** style logic; if **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** is absent, use the skill’s **Authoring rules** + **Markdown document shape** as the *logical* style, while still emitting **`tests.json`** per below.
+
+## Output directory
+
+Write **only** under **`generated/jira-tests/<ISSUE_KEY>/`** (directory name must match the parent Jira key for this run).
+
+## Manifest schema (`tests.json`) — canonical
+
+Path: **`generated/jira-tests/<ISSUE_KEY>/tests.json`**
+
+```json
+{
+  "version": 1,
+  "tests": [
+    {
+      "summary": "string (required)",
+      "testSteps": "string (Preconditions + Steps as plain text for Jira Test Steps field)",
+      "expectedResult": "string (maps to Expected result custom field)",
+      "description": "optional Markdown"
+    }
+  ]
+}
+```
+
+- Field IDs for Jira **Test** custom fields: **`config/jira.test-generator.json`** → `jira.customFields` (`testSteps`, `expectedResult`).
+- When creating issues via **MCP**, pass those field IDs (or names your MCP tool expects).
+
+## `meta.json` (after MCP create)
+
+If **every** Test was created via **MCP** and linked to the parent:
+
+```json
+{
+  "jiraPublish": "mcp",
+  "mcpCreatedKeys": ["PROJ-201", "PROJ-202"]
+}
+```
+
+- **`mcpCreatedKeys`**: same **length** and **order** as **`tests`** in `tests.json`.
+- If missing or invalid, **`scripts/publish-if-needed.js`** runs **REST** (`publishRest`) and may duplicate work if MCP already created issues — keep **`meta.json`** accurate when using MCP create.
+
+## Publish: MCP first, REST fallback
+
+- **MCP:** Use **read** tools from **`@atlassian-dc-mcp/jira`** (e.g. `jira_searchIssues`, `jira_getIssue`, `jira_getIssueComments`) and **create/update/comment/transition** tools when you need to publish via MCP; link issues with whatever linking support your tools provide (or rely on REST fallback).
+- **REST:** **`scripts/publish-if-needed.js`** runs after the agent; it skips REST when **`meta.json`** declares MCP success; otherwise **`publishRest`** runs (same as **`node scripts/publish.js`**).
+- **Local force REST:** `npm run publish:jira:rest -- <KEY>` — not the Cursor Agent CLI.
+
+## Jira MCP in CI
+
+- MCP config: rendered **`.cursor/mcp.json`** from **`.cursor/mcp.template.json`** on the runner.
+- Prefer the **same Jira project** as the parent issue unless requirements say otherwise.
+
+## Local MCP (`mcp.json`)
+
+- Edit **`.cursor/mcp.template.json`** (uses **`@atlassian-dc-mcp/jira`**; placeholders **`JIRA_HOST`** / **`JIRA_API_TOKEN`**), then run **`node scripts/render-mcp-config.js`** with **`JIRA_API_TOKEN`** and either **`JIRA_HOST`** or **`JIRA_BASE_URL`** (host is derived from the URL), or copy the rendered output to **`.cursor/mcp.json`** manually.
+
+## Safety
+
+- **Never** write secrets or tokens into repo files under **`generated/`** or elsewhere.
