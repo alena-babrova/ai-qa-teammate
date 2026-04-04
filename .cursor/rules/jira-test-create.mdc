@@ -1,0 +1,17 @@
+---
+description: Jira project, Test issue type, and custom fields for Test Steps / Expected result
+alwaysApply: true
+---
+
+# Jira — creating Test issues
+
+Edit the table for your instance.
+
+| What | Value |
+|------|--------|
+| **Project key** | `EPMRPP` |
+| **Issue type** | `Test` |
+| **Test Steps** field (preconditions + steps) | `customfield_19206` |
+| **Expected result** field | `customfield_19207` |
+
+Use these when creating or updating **Test** issues (e.g. in `jira_createIssue` / `jira_updateIssue` payloads).

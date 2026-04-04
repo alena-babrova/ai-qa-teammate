@@ -48,7 +48,7 @@ Path: **`generated/jira-tests/<ISSUE_KEY>/tests.json`**
 }
 ```
 
-- Field IDs for Jira **Test** custom fields: **`config/jira.test-generator.json`** → `jira.customFields` (`testSteps`, `expectedResult`).
+- **Project, issue type, and custom fields** for new Tests: **`.cursor/rules/jira-test-create.mdc`** (edit that rule for your Jira).
 - **Create and link every Test issue only via Jira MCP** (`@atlassian-dc-mcp/jira`). Use **`jira_createIssue`**, **`jira_updateIssue`**, and any linking approach your MCP tools support so each new Test is associated with the parent story.
 
 ## `meta.json` (required after MCP create)

@@ -28,7 +28,7 @@ For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SEC
 
 ## Other setup
 
-- **Jira field mapping** (project, Test type, custom fields): [`config/jira.test-generator.json`](config/jira.test-generator.json).
+- **Jira project, Test type, and custom fields:** [`.cursor/rules/jira-test-create.mdc`](.cursor/rules/jira-test-create.mdc).
 - **Conventions** for titles, steps, and expected results: [`.cursor/rules/`](.cursor/rules/).
 
 ## Output

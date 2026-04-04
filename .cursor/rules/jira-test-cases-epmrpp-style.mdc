@@ -5,8 +5,6 @@ alwaysApply: true
 
 # Jira-derived test cases — EPMRPP style
 
-Reference suites (linked `Test` issues): [EPMRPP-91802](https://jiraeu.epam.com/browse/EPMRPP-91802), [EPMRPP-92258](https://jiraeu.epam.com/browse/EPMRPP-92258), [EPMRPP-93481](https://jiraeu.epam.com/browse/EPMRPP-93481).
-
 ## When this applies
 
 Whenever the user asks to **create test cases from a Jira** story (or equivalent), match the conventions below. **Format only** — the **jira-story-test-cases-md** skill handles Jira fetch and deliverable shape (**`tests.json`** vs Markdown); use **this rule** as the default EPMRPP style (not a bare generic template).

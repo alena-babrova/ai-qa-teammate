@@ -122,7 +122,7 @@ Use the configured Jira tools (e.g. `user-atlassian` / `jira_get_issue`, `jira_s
 
 3. **Required `meta.json`:** After you create **every** Test issue via **Jira MCP** and link each to the parent, write **`meta.json`** next to **`tests.json`** with **`jiraPublish`: `"mcp"`** and **`mcpCreatedKeys`** (same count and order as **`tests`**). CI runs **`scripts/verify-mcp-jira.js`** and **fails** without valid **`meta.json`**. There is no REST publish for Test issues.
 
-4. **Jira MCP:** Use read tools on the parent **`<ISSUE_KEY>`**; create/update/link Test issues **only** via MCP. Custom field IDs for MCP payloads must align with **`config/jira.test-generator.json`** (`jira.customFields`).
+4. **Jira MCP:** Use read tools on the parent **`<ISSUE_KEY>`**; create/update/link Test issues **only** via MCP. Use project, type, and custom fields from **`.cursor/rules/jira-test-create.mdc`**.
 
 5. **No secrets** in any generated files.
 
