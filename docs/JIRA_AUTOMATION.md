@@ -2,7 +2,7 @@
 
 ## Goal
 
-When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) generates **`generated/jira-tests/<KEY>/tests.json`** and **`publish.js`** creates **Test** issues in Jira.
+When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) writes **`generated/jira-tests/<KEY>/tests.json`**, creates and links **Test** issues in Jira **via Jira MCP only**, and writes **`meta.json`** so CI can verify success.
 
 ## Jira Automation rule (outline)
 
@@ -30,4 +30,4 @@ When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases**
 
 ## After a successful run
 
-Consider a follow-up automation to remove **`ai_ready`** or add **`ai_tests_generated`** to avoid duplicate dispatches. **`publish.js`** also supports skipping when linked **Test** issues with the idempotency marker already exist (see `config/jira.test-generator.json`).
+Consider a follow-up automation to remove **`ai_ready`** or add **`ai_tests_generated`** to avoid duplicate dispatches. If the workflow is triggered again for the same story, the agent should avoid creating duplicate Tests (e.g. check Jira with MCP before creating).

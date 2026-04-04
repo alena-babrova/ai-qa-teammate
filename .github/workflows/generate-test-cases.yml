@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  generate-and-publish:
+  generate-and-verify:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -76,8 +76,8 @@ jobs:
           PROMPT="$(node scripts/build-ci-prompt.js)"
           "${AGENT_BIN}" -p "${PROMPT}" --print
 
-      - name: Publish tests to Jira (REST if MCP did not create issues)
-        run: node scripts/publish-if-needed.js "${ISSUE_KEY}"
+      - name: Verify MCP created all Test issues in Jira
+        run: node scripts/verify-mcp-jira.js "${ISSUE_KEY}"
 
       - name: Upload generated output on failure
         if: failure()

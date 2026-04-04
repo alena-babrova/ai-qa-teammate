@@ -7,7 +7,6 @@
   },
   "scripts": {
     "render-mcp": "node scripts/render-mcp-config.js",
-    "publish:jira": "node scripts/publish-if-needed.js",
-    "publish:jira:rest": "node scripts/publish.js"
+    "verify:jira-mcp": "node scripts/verify-mcp-jira.js"
   }
 }
