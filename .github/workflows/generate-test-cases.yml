@@ -1,7 +1,7 @@
 # Cursor Agent CLI (cursor-agent) runs ONLY in this GitHub Actions workflow.
 # Locally, use Cursor IDE with .cursor/rules and .cursor/mcp.json — do not run headless agent on dev machines.
 
-name: AI test generate
+name: Generate Test Cases
 
 on:
   repository_dispatch:
@@ -14,7 +14,7 @@ on:
         type: string
 
 concurrency:
-  group: ai-test-generate-${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
+  group: generate-test-cases-${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
   cancel-in-progress: false
 
 jobs:

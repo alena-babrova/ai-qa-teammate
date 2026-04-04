@@ -2,7 +2,7 @@
 
 ## Goal
 
-When a Jira issue is labeled **`ai_ready`**, trigger the **AI test generate** workflow on GitHub so **Cursor Agent** (in Actions only) generates **`generated/jira-tests/<KEY>/tests.json`** and **`publish.js`** creates **Test** issues in Jira.
+When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) generates **`generated/jira-tests/<KEY>/tests.json`** and **`publish.js`** creates **Test** issues in Jira.
 
 ## Jira Automation rule (outline)
 
@@ -26,7 +26,7 @@ When a Jira issue is labeled **`ai_ready`**, trigger the **AI test generate** wo
      ```
      Use your automation’s syntax to inject the issue key (e.g. smart value for **Issue key**).
 
-3. **Event type** must match the workflow: **`ai-test-generate`** (see `.github/workflows/ai-test-generate.yml`).
+3. **Event type** must match the workflow: **`ai-test-generate`** (see `.github/workflows/generate-test-cases.yml`). The workflow file defines **`repository_dispatch`** handling; the API **`event_type`** stays **`ai-test-generate`** so existing integrations keep working.
 
 ## After a successful run
 

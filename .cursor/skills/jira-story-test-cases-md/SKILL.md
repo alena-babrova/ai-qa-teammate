@@ -114,7 +114,7 @@ Use the configured Jira tools (e.g. `user-atlassian` / `jira_get_issue`, `jira_s
 
 ## Headless CI (this repository, GitHub Actions)
 
-**This section overrides** the Markdown-only deliverable when the agent runs in **GitHub Actions** for **ai-qa-teammate** (e.g. `CI=true`, workflow `ai-test-generate`).
+**This section overrides** the Markdown-only deliverable when the agent runs in **GitHub Actions** for **ai-qa-teammate** (e.g. `CI=true`, **Generate Test Cases** workflow).
 
 1. **Do not** ask any question. Use **default RPP (Path A)** — read **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** if it exists; if missing, use **Authoring rules** and **Markdown document shape** above as the logical style guide for titles, granularity, GA scope, and Preconditions/Steps/Expected *content*, but **do not** write a standalone `<KEY>-test-cases.md` as the pipeline deliverable.
 

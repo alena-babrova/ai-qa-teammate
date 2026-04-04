@@ -23,7 +23,7 @@ async function main() {
   const runUrl =
     runId && repo ? `${server}/${repo}/actions/runs/${runId}` : "(run URL n/a)";
 
-  const body = `AI test generator workflow failed.
+  const body = `Generate Test Cases workflow failed.
 
 Workflow run: ${runUrl}
 
