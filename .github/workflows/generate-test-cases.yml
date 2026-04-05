@@ -26,6 +26,8 @@ jobs:
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
       JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      # Jira 10.x: comments must use REST API v3 + ADF; v2 plain-string bodies often do not show in the UI.
+      JIRA_REST_API_VERSION: "3"
       CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
     steps:
       - name: Validate issue key

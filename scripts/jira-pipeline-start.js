@@ -54,8 +54,17 @@ async function main() {
     lines.push(`Workflow run: ${runUrl}`);
   }
 
-  await client.addComment(issueKey, lines.join("\n"));
-  console.log(`Jira write OK: posted start comment on ${issueKey}`);
+  const comment = await client.addComment(issueKey, lines.join("\n"));
+  if (comment?.id == null) {
+    console.error(
+      "Jira comment API returned success but no comment id; check JIRA_REST_API_VERSION (use 3 for Jira 10.x).",
+      comment,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `Jira write OK: comment id=${comment.id} on ${issueKey}${comment.self ? ` (${comment.self})` : ""}`,
+  );
 }
 
 main().catch((e) => {
