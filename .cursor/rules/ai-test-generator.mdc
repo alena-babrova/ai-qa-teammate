@@ -28,11 +28,11 @@ alwaysApply: true
 
 ## Output directory
 
-Write **only** under **`generated/jira-tests/<ISSUE_KEY>/`** (directory name must match the parent Jira key for this run).
+Write **only** under **`generated/jira-tests/<STORY_KEY>/`**, where **`<STORY_KEY>`** is the issue you used as the **story source** for tests. In CI, **`STORY_KEY`** is pre-resolved from the workflow target: if the target is a **Sub-task**, it is the **parent** issue key; otherwise it matches the target. **`<STORY_KEY>`** is also where new **Test** issues should link (the story).
 
 ## Manifest schema (`tests.json`) — canonical
 
-Path: **`generated/jira-tests/<ISSUE_KEY>/tests.json`**
+Path: **`generated/jira-tests/<STORY_KEY>/tests.json`** (see **Output directory** for **`STORY_KEY`** vs Sub-task).
 
 ```json
 {

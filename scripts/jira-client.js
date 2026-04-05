@@ -40,6 +40,13 @@ export function createJiraClient(opts) {
 
   return {
     base,
+    async getIssue(issueKey, fields = ["summary", "description", "issuetype"]) {
+      const params = new URLSearchParams({ fields: fields.join(",") });
+      return request(
+        "GET",
+        `/issue/${encodeURIComponent(issueKey)}?${params.toString()}`,
+      );
+    },
     async search(jql, fields = ["summary", "description", "key"]) {
       const params = new URLSearchParams({
         jql,

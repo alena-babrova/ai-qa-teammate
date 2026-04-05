@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Writes the Cursor Agent CI prompt to stdout (ISSUE_KEY from env).
+ * Writes the Cursor Agent CI prompt to stdout.
+ * Env: ISSUE_KEY (required), STORY_KEY (optional; defaults to ISSUE_KEY — set by workflow after resolve-output-key.js).
  */
 
 import fs from "fs";
@@ -15,6 +16,7 @@ if (!issueKey) {
   console.error("ISSUE_KEY is required");
   process.exit(1);
 }
+const storyKey = process.env.STORY_KEY?.trim() || issueKey;
 
 const promptPath = path.join(root, "prompts", "ci-generate-tests.md");
 if (!fs.existsSync(promptPath)) {
@@ -24,4 +26,5 @@ if (!fs.existsSync(promptPath)) {
 
 let text = fs.readFileSync(promptPath, "utf8");
 text = text.replace(/__ISSUE_KEY__/g, issueKey);
+text = text.replace(/__STORY_KEY__/g, storyKey);
 process.stdout.write(text);

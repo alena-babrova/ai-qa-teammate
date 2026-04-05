@@ -49,13 +49,16 @@ jobs:
       - name: Render MCP config from template
         run: node scripts/render-mcp-config.js
 
+      - name: Resolve story key (Sub-task uses parent)
+        run: node scripts/resolve-output-key.js >> "$GITHUB_ENV"
+
       - name: Install Cursor Agent CLI
         run: |
           curl -fsSL https://cursor.com/install | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Prepare output directory
-        run: mkdir -p "generated/jira-tests/${ISSUE_KEY}"
+        run: mkdir -p "generated/jira-tests/${STORY_KEY}"
 
       - name: Run Cursor Agent (headless)
         env:
@@ -77,7 +80,7 @@ jobs:
           "${AGENT_BIN}" -p "${PROMPT}" --print
 
       - name: Verify MCP created all Test issues in Jira
-        run: node scripts/verify-mcp-jira.js "${ISSUE_KEY}"
+        run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
 
       - name: Upload generated output on failure
         if: failure()

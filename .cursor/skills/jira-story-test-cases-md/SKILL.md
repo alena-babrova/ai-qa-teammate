@@ -118,11 +118,11 @@ Use the configured Jira tools (e.g. `user-atlassian` / `jira_get_issue`, `jira_s
 
 1. **Do not** ask any question. Use **default RPP (Path A)** — read **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** if it exists; if missing, use **Authoring rules** and **Markdown document shape** above as the logical style guide for titles, granularity, GA scope, and Preconditions/Steps/Expected *content*, but **do not** write a standalone `<KEY>-test-cases.md` as the pipeline deliverable.
 
-2. **Primary deliverable:** **`generated/jira-tests/<ISSUE_KEY>/tests.json`** exactly as specified in **`.cursor/rules/ai-test-generator.mdc`** (`version`, `tests[]` with `summary`, `testSteps`, `expectedResult`, optional `description`). Map logical *Preconditions* + *Steps* into **`testSteps`** and *Expected results* into **`expectedResult`** (plain text). Use **`summary`** for the behavior-focused title (same style as a `##` heading in the Markdown shape).
+2. **Primary deliverable:** **`generated/jira-tests/<STORY_KEY>/tests.json`** exactly as specified in **`.cursor/rules/ai-test-generator.mdc`** (`version`, `tests[]` with `summary`, `testSteps`, `expectedResult`, optional `description`). **`STORY_KEY`** is the parent story when the workflow target is a **Sub-task**, otherwise the target key. Map logical *Preconditions* + *Steps* into **`testSteps`** and *Expected results* into **`expectedResult`** (plain text). Use **`summary`** for the behavior-focused title (same style as a `##` heading in the Markdown shape).
 
 3. **Required `meta.json`:** After you create **every** Test issue via **Jira MCP** and link each to the parent, write **`meta.json`** next to **`tests.json`** with **`jiraPublish`: `"mcp"`** and **`mcpCreatedKeys`** (same count and order as **`tests`**). CI runs **`scripts/verify-mcp-jira.js`** and **fails** without valid **`meta.json`**. There is no REST publish for Test issues.
 
-4. **Jira MCP:** Use read tools on the parent **`<ISSUE_KEY>`**; create/update/link Test issues **only** via MCP. Use project, type, and custom fields from **`.cursor/rules/jira-test-create.mdc`**.
+4. **Jira MCP:** Read the **story** (**`<STORY_KEY>`** — parent if the target was a Sub-task). Create/update/link Test issues **only** via MCP; link new Tests to **`STORY_KEY`**. Use project, type, and custom fields from **`.cursor/rules/jira-test-create.mdc`**.
 
 5. **No secrets** in any generated files.
 
