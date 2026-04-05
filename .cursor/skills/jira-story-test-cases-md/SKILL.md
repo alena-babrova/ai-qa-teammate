@@ -11,7 +11,7 @@ description: >-
 
 ## When this skill applies
 
-Use when the user wants **new test cases** written as **Markdown** (not Jira issue creation unless they ask separately), sourced from a **Jira User Story** or **Epic** description (acceptance criteria, Gherkin tables, scope).
+Use when the user wants **new test cases** written as **Markdown** (not Jira issue creation unless they ask separately), sourced from a **Jira User Story** or **Epic** description (acceptance criteria, Gherkin tables, scope). If the user gives a **Sub-task** key or URL (e.g. “Test design”), **resolve the parent story first** and base all tests on that story only—see **Resolve `STORY_KEY` (verify first)** below.
 
 **Default deliverable:** one Markdown document, one `##` section per test case, with *Preconditions* / *Steps* / *Expected results* blocks.
 
@@ -40,10 +40,28 @@ Use the **Markdown document shape** section in this skill only, and state that i
 
 Use the configured Jira tools (e.g. `user-atlassian` / `jira_get_issue`, `jira_search`, `jira_search_fields`). Set `update_history: false` on reads when supported.
 
-### User Story (or Epic)
+### Resolve `STORY_KEY` (verify first)
 
-1. Parse `<STORY_KEY>` from the user’s URL or key (e.g. `EPMRPP-98726`).
-2. `jira_get_issue` with fields at least: `summary`, `description`, `status`, `issuetype`. Use **description** for AC, Gherkin tables, in/out of scope, permissions, localization, analytics, design links.
+**Always** determine the canonical **story** key before writing tests:
+
+1. Parse the issue key from the user’s URL or paste (e.g. `EPMRPP-98726`).
+2. **`jira_get_issue`** that key with at least **`issuetype`**, **`parent`**, **`summary`**.
+3. If **`issuetype`** indicates a **Sub-task** (or equivalent) and **`parent.key`** is present, set **`<STORY_KEY> = parent.key`**. The original key is **only a trigger**; **do not** use the Sub-task’s **description** or **summary** to define test scenarios.
+4. Otherwise **`<STORY_KEY>`** is the key from step 1 (the issue is the story or top-level work item you are testing from).
+5. Fetch requirements from **`jira_get_issue(<STORY_KEY>)`** with at least **`summary`**, **`description`**, **`status`**, **`issuetype`**, and any AC/DoD custom fields your tool returns. Use **description** (and AC fields) for AC, Gherkin tables, in/out of scope, permissions, localization, analytics, design links.
+
+### User Story (or Epic) — requirements fetch
+
+After **`STORY_KEY`** is fixed per above, all test-design content comes from the **story** issue only.
+
+### Empty story — **do not** create tests
+
+If the story’s **description** has no substantive body (missing, null, whitespace-only, or empty ADF) **and** every **Acceptance Criteria** / **DoD** (or equivalent) custom field you fetched is also empty or missing, the story has **no testable content**. **Summary alone is not sufficient.**
+
+Then: **do not** author test cases, **do not** create Jira Test issues, **do not** use Sub-task text as a substitute.
+
+- **CI (`tests.json`):** write **`"tests": []`** and **`meta.json`** with **`"jiraPublish": "mcp"`** and **`"mcpCreatedKeys": []`** (see **`.cursor/rules/ai-test-generator.mdc`**).
+- **Markdown deliverable:** write only a short document stating that **`STORY_KEY`** has no description/AC to derive tests from (no fabricated `##` test sections).
 
 ---
 
@@ -96,36 +114,25 @@ Use the configured Jira tools (e.g. `user-atlassian` / `jira_get_issue`, `jira_s
 
 ---
 
-## Interaction with other skills and rules
+## Headless CI (this repository, GitHub Actions)
 
-- **`import-jira-tests-to-agentic-qa`:** That skill **imports existing** Jira Tests into Agentic QA. This skill **authors Markdown** from a story + references; it does not replace Jira issue creation unless the user explicitly requests creating Test issues in Jira.
-- **`jira-test-cases-epmrpp-style` (.mdc):** Default **format** (default RPP); always applied without prompting.
+When **`CI=true`** (or the run is the **Generate Test Cases** workflow), this skill’s **Markdown file** is **not** the primary deliverable. Follow **`.cursor/rules/ai-test-generator.mdc`** and the rendered prompt from **`prompts/ci-generate-tests.md`** (via **`scripts/build-ci-prompt.js`**).
+
+**Verify first:** The workflow sets **`ISSUE_KEY`** (dispatch target, often a Sub-task) and **`STORY_KEY`** (canonical story—the **parent** when the target is a Sub-task). If **`ISSUE_KEY` ≠ `STORY_KEY`**, the Sub-task is **only a trigger**; **never** use its description or summary for test design.
+
+**Then:**
+
+- Derive tests using the same **authoring rules** as above (AC mapping, scope, GA judgment, EPMRPP style via **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**), but source **only** **`jira_getIssue(STORY_KEY)`** (or equivalent) for requirements. If the story is **empty** per **Empty story — do not create tests** above, emit **`tests: []`** and **`meta.json`** with **`mcpCreatedKeys: []`**—**no** MCP Test creation.
+- Emit **`generated/jira-tests/<STORY_KEY>/tests.json`** (and **`meta.json`** after MCP creates Tests, or empty manifests when there are no tests)—**never** use **`ISSUE_KEY`** as the folder name when the two keys differ.
+- Each **`tests[].summary`** must contain **`STORY_KEY`**; **do not** put the Sub-task key in summaries when it differs from **`STORY_KEY`**.
 
 ---
 
 ## Checklist before handing off
 
+- [ ] **`STORY_KEY` resolved** (Sub-task → parent); requirements taken **only** from the story issue, not from a trigger Sub-task.
+- [ ] If story **description** and **AC/DoD** fields are empty: **no** invented tests—**`tests: []`** + empty **`mcpCreatedKeys`**, or Markdown note only.
 - [ ] **EPMRPP `.mdc` rule** applied (or skill template if rule missing) + **Note** in file for Markdown deliverables.
 - [ ] Story description mined for AC, scope, i18n, permissions, analytics.
 - [ ] Preconditions / Steps / Expected align with **EPMRPP rule**.
-- [ ] File named and story URL included.
-
----
-
-## Headless CI (this repository, GitHub Actions)
-
-**This section overrides** the Markdown-only deliverable when the agent runs in **GitHub Actions** for **ai-qa-teammate** (e.g. `CI=true`, **Generate Test Cases** workflow).
-
-1. **Do not** ask any question. Use **default RPP (Path A)** — read **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** if it exists; if missing, use **Authoring rules** and **Markdown document shape** above as the logical style guide for titles, granularity, GA scope, and Preconditions/Steps/Expected *content*, but **do not** write a standalone `<KEY>-test-cases.md` as the pipeline deliverable.
-
-2. **Primary deliverable:** **`generated/jira-tests/<STORY_KEY>/tests.json`** exactly as specified in **`.cursor/rules/ai-test-generator.mdc`** (`version`, `tests[]` with `summary`, `testSteps`, `expectedResult`, optional `description`). **`STORY_KEY`** is the parent story when the workflow target is a **Sub-task**, otherwise the target key. **Ground** *Preconditions*, *Steps*, and *Expected results* **only** in the **story** issue’s **Description** and AC-style fields from **`jira_getIssue(<STORY_KEY>)`**—not the Sub-task’s description or summary. Map them into **`testSteps`** and **`expectedResult`** (plain text). Each **`summary`** must **include `STORY_KEY`** (prefix like **`[STORY-123] `** per **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**); do **not** use the Sub-task dispatch key in **`summary`** when it differs from **`STORY_KEY`**. Use **`summary`** for the behavior-focused title (same style as a `##` heading in the Markdown shape).
-
-3. **Required `meta.json`:** After you create **every** Test issue via **Jira MCP** and link each to the parent, write **`meta.json`** next to **`tests.json`** with **`jiraPublish`: `"mcp"`** and **`mcpCreatedKeys`** (same count and order as **`tests`**). CI runs **`scripts/verify-mcp-jira.js`** and **fails** without valid **`meta.json`**. There is no REST publish for Test issues.
-
-4. **Jira MCP (requirements only from the story):** Call **`jira_getIssue`** on **`<STORY_KEY>`** only for **requirements** (parent story when the target was a Sub-task). Request **`description`**, **`summary`**, **`issuetype`**, **`parent`**, and AC/DoD **custom fields** when available. **Do not** pull test scope from the Sub-task’s **description** or **summary** when it differs from **`STORY_KEY`**. Create/update/link Test issues **only** via MCP; link new Tests to **`STORY_KEY`**. Use project, type, and custom fields from **`.cursor/rules/jira-test-create.mdc`**.
-
-5. **No secrets** in any generated files.
-
-6. **Project:** Prefer the same Jira **project** as the **story** (**`<STORY_KEY>`**), read from **`jira_getIssue`** on that key.
-
-7. **Verification:** Output must pass **`scripts/verify-mcp-jira.js`** (same as the workflow step after the agent).
+- [ ] File named and story URL included (URL uses **`<STORY_KEY>`**, the canonical story).

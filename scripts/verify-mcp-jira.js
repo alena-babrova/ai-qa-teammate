@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Verifies that MCP created every Test issue: valid tests.json + meta.json (jiraPublish=mcp, mcpCreatedKeys).
- * CI fails if the agent did not complete Jira creation via MCP.
+ * Verifies tests.json + meta.json (jiraPublish=mcp, mcpCreatedKeys length matches tests).
+ * Allows tests.length === 0 when the story had no testable content (empty mcpCreatedKeys).
+ * CI fails if the agent did not write valid manifests or mismatched key counts.
  *
  * Usage: node scripts/verify-mcp-jira.js <STORY_KEY>
  * Looks for generated/jira-tests/<STORY_KEY>/tests.json first; if missing, tries ISSUE_KEY env
@@ -97,9 +98,33 @@ function main() {
     console.error('tests.json must have "version": 1');
     process.exit(1);
   }
-  if (!Array.isArray(manifest.tests) || manifest.tests.length === 0) {
-    console.error("tests.json must contain a non-empty tests array.");
+  if (!Array.isArray(manifest.tests)) {
+    console.error("tests.json must contain a tests array.");
     process.exit(1);
+  }
+
+  if (manifest.tests.length === 0) {
+    let metaEmpty = null;
+    if (fs.existsSync(metaPath)) {
+      try {
+        metaEmpty = loadJson(metaPath);
+      } catch (e) {
+        console.error(`Invalid meta.json: ${e.message}`);
+        process.exit(1);
+      }
+    }
+    const emptyErr = validateMcpMeta(manifest, metaEmpty);
+    if (emptyErr) {
+      console.error(
+        "tests.json has 0 tests (empty story): meta.json must exist with \"jiraPublish\": \"mcp\" and \"mcpCreatedKeys\": [].",
+      );
+      console.error(emptyErr);
+      process.exit(1);
+    }
+    console.log(
+      "OK: 0 tests (story had no testable description/AC content); meta.json mcpCreatedKeys is [].",
+    );
+    process.exit(0);
   }
 
   const summaryErr = validateSummariesIncludeStoryKey(manifest, storyKey);

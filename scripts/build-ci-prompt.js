@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
  * Writes the Cursor Agent CI prompt to stdout.
- * Env: ISSUE_KEY (required) — workflow dispatch key (often a Sub-task).
- * STORY_KEY (optional; defaults to ISSUE_KEY) — set by workflow after resolve-output-key.js: parent story when dispatch is Sub-task; used for paths, Jira links, and Test summary prefixes.
+ * Env: ISSUE_KEY (required) — workflow dispatch key (often a Sub-task; trigger only when STORY_KEY differs).
+ * STORY_KEY (optional; defaults to ISSUE_KEY) — set by workflow after resolve-output-key.js: canonical story
+ * (parent when dispatch is Sub-task). The agent must use STORY_KEY for requirements, generated/jira-tests/ paths,
+ * tests[].summary, and linking Tests — never substitute ISSUE_KEY when the two differ. See prompts/ci-generate-tests.md.
  */
 
 import fs from "fs";
