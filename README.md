@@ -26,6 +26,8 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 
 For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
 
+**Cursor Agent model in CI:** default is **[`.cursor/ci/agent.json`](.cursor/ci/agent.json)** (`model`). Optional GitHub Actions variable **`CURSOR_AGENT_MODEL`** overrides it without a commit. See **`docs/GITHUB_SECRETS.md`**.
+
 ## Other setup
 
 - **Jira project, Test type, and custom fields:** [`.cursor/rules/jira-test-create.mdc`](.cursor/rules/jira-test-create.mdc).

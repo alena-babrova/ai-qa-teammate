@@ -63,6 +63,7 @@ jobs:
       - name: Run Cursor Agent (headless)
         env:
           CI: "true"
+          CURSOR_AGENT_MODEL: ${{ vars.CURSOR_AGENT_MODEL }}
         run: |
           if [ -z "${CURSOR_API_KEY}" ]; then
             echo "CURSOR_API_KEY secret is not set."
@@ -76,9 +77,12 @@ jobs:
             echo "Cursor Agent CLI not found on PATH after install."
             exit 1
           fi
+          MODEL="$(node scripts/resolve-cursor-agent-model.js)"
           PROMPT="$(node scripts/build-ci-prompt.js)"
+          # Visible in the Actions UI (annotations) right before CLI requests start.
+          echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
           # Non-interactive CI: trust the checked-out repo (avoids "Workspace Trust Required" prompt).
-          "${AGENT_BIN}" --trust -p "${PROMPT}" --print
+          "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print
 
       - name: Verify MCP created all Test issues in Jira
         run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
