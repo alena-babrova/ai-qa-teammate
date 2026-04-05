@@ -107,6 +107,27 @@ jobs:
       - name: Verify MCP created all Test issues in Jira
         run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
 
+      - name: Log generated test cases to job log
+        if: always()
+        run: |
+          for KEY in "${STORY_KEY}" "${ISSUE_KEY}"; do
+            [ -z "${KEY}" ] && continue
+            DIR="generated/jira-tests/${KEY}"
+            if [ -f "${DIR}/tests.json" ]; then
+              echo "::group::Generated test cases (${KEY})"
+              echo "--- tests.json ---"
+              python3 -m json.tool "${DIR}/tests.json" 2>/dev/null || cat "${DIR}/tests.json"
+              if [ -f "${DIR}/meta.json" ]; then
+                echo ""
+                echo "--- meta.json ---"
+                python3 -m json.tool "${DIR}/meta.json" 2>/dev/null || cat "${DIR}/meta.json"
+              fi
+              echo "::endgroup::"
+              exit 0
+            fi
+          done
+          echo "No generated/jira-tests/.../tests.json found to log."
+
       - name: Upload generated output on failure
         if: failure()
         uses: actions/upload-artifact@v4

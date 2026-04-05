@@ -26,6 +26,10 @@ alwaysApply: true
 - **Never** ask the user any blocking question. CI has no human in the loop.
 - Apply **Path A (default RPP)** style logic; if **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** is absent, use the skill’s **Authoring rules** + **Markdown document shape** as the *logical* style, while still emitting **`tests.json`** per below.
 
+## CI — Sub-task dispatch: requirements **only** from the story
+
+When **`ISSUE_KEY`** is a **Sub-task** and **`STORY_KEY`** is its **parent**, **all** material for test design comes **only** from **`jira_getIssue(STORY_KEY)`**: the story’s **Description**, **summary** (title context), **`issuetype`**, **`parent`**, and any **Acceptance Criteria / DoD** custom fields the MCP returns for **that** issue. **Do not** use **`jira_getIssue(ISSUE_KEY)`** (Sub-task) **description** or **summary** to define tests. If the story body is empty, do not substitute Sub-task text—note the gap instead.
+
 ## Output directory
 
 Write **only** under **`generated/jira-tests/<STORY_KEY>/`**, where **`<STORY_KEY>`** is the issue you used as the **story source** for tests. In CI, **`STORY_KEY`** is pre-resolved from the workflow target: if the target is a **Sub-task**, it is the **parent** issue key; otherwise it matches the target. **`<STORY_KEY>`** is also where new **Test** issues should link (the story).
@@ -68,8 +72,8 @@ After **every** Test exists in Jira and is linked to the parent, write **`meta.j
 
 ## Jira: MCP only (Test creation)
 
-- **Read** the parent issue with **`jira_getIssue`** / **`jira_searchIssues`** as needed.
-- **Write** (create/update Test issues, link to parent) **only** through MCP tools. Do not rely on repository scripts to create Jira issues.
+- **Read** requirements **only** from **`jira_getIssue(STORY_KEY)`** (Description, summary for title context, AC/DoD custom fields). **Do not** use the Sub-task’s (**`ISSUE_KEY`**) description or summary for test design when it is not the story. Then **`jira_searchIssues`** / other reads only if they add context **about the same story**.
+- **Write** (create/update Test issues, link to the story) **only** through MCP tools. Do not rely on repository scripts to create Jira issues.
 - If your MCP server cannot link issues, use the same tooling stack your team uses with that server (still MCP-side); the pipeline does not run a REST publisher.
 
 ## Jira MCP in CI
