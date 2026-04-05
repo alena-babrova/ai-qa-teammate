@@ -4,7 +4,9 @@
  * CI fails if the agent did not complete Jira creation via MCP.
  *
  * Usage: node scripts/verify-mcp-jira.js <STORY_KEY>
- * Resolves generated/jira-tests/<STORY_KEY>/ (story key from workflow — parent when dispatch was Sub-task).
+ * Looks for generated/jira-tests/<STORY_KEY>/tests.json first; if missing, tries ISSUE_KEY env
+ * when it differs (agent sometimes writes under the Sub-task key by mistake).
+ * Summary checks always use STORY_KEY (canonical story key).
  */
 
 import fs from "fs";
@@ -47,21 +49,48 @@ function validateSummariesIncludeStoryKey(manifest, storyKey) {
 }
 
 function main() {
-  const storyKey = process.argv[2];
+  const storyKey = process.argv[2]?.trim();
+  const issueKey = process.env.ISSUE_KEY?.trim();
 
   if (!storyKey || !keyRe.test(storyKey)) {
     console.error("Usage: node scripts/verify-mcp-jira.js <STORY_KEY>");
     process.exit(1);
   }
 
-  const outDir = path.join(root, "generated", "jira-tests", storyKey);
-  const manifestPath = path.join(outDir, "tests.json");
-  const metaPath = path.join(outDir, "meta.json");
+  /** @type {string[]} */
+  const dirKeys = [storyKey];
+  if (issueKey && keyRe.test(issueKey) && issueKey !== storyKey) {
+    dirKeys.push(issueKey);
+  }
 
-  if (!fs.existsSync(manifestPath)) {
-    console.error(`Missing manifest: ${manifestPath}`);
+  let outDir = null;
+  let dirUsed = null;
+  for (const key of dirKeys) {
+    const dir = path.join(root, "generated", "jira-tests", key);
+    const mp = path.join(dir, "tests.json");
+    if (fs.existsSync(mp)) {
+      outDir = dir;
+      dirUsed = key;
+      break;
+    }
+  }
+
+  if (!outDir) {
+    const tried = dirKeys.map((k) =>
+      path.join(root, "generated", "jira-tests", k, "tests.json"),
+    );
+    console.error(`Missing tests.json (tried):\n${tried.join("\n")}`);
     process.exit(1);
   }
+
+  if (dirUsed !== storyKey) {
+    console.warn(
+      `::warning::tests.json was found under ${dirUsed} but canonical output is generated/jira-tests/${storyKey}/. Prefer writing to the story key folder when ISSUE_KEY is a Sub-task.`,
+    );
+  }
+
+  const manifestPath = path.join(outDir, "tests.json");
+  const metaPath = path.join(outDir, "meta.json");
 
   const manifest = loadJson(manifestPath);
   if (manifest.version !== 1) {
