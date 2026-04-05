@@ -36,9 +36,26 @@ Use these in **`jira_createIssue`** / **`jira_updateIssue`** (or equivalent MCP)
 - **CI:** **`ISSUE_KEY`** = dispatch target; **`STORY_KEY`** = workflow-resolved story (parent when target is Sub-task). If they **differ**, **`ISSUE_KEY`** is **trigger only**. Scope: **`jira_getIssue(STORY_KEY)`** only — description, summary (title context), AC/DoD fields. **`generated/jira-tests/<STORY_KEY>/`**, **`tests[].summary`**, Test **links** → all **`STORY_KEY`**.
 - **IDE:** User may paste a Sub-task. **`jira_getIssue`** → if Sub-task, **`STORY_KEY = parent.key`**, then fetch the story. Never use Sub-task **description**/**summary** for scenarios when the story is the parent.
 
+## Pre-generation MCP gate (before any tests)
+
+**Before** authoring tests or writing **`generated/jira-tests/<STORY_KEY>/tests.json`**, use **Jira MCP** to call **`jira_getIssue(STORY_KEY)`** (or equivalent) and load at least Jira **`summary`**, **`description`**, **`issuetype`**, **`parent`**, and AC/DoD-style fields if available.
+
+- **Gate passes** when: the MCP call **succeeds**; the Jira issue **`summary`** (the **issue title** in Jira—**not** the **`tests[].summary`** field you write in **`tests.json`**) is a **non-empty** string; **`description`** is **present** in the response (value may be null, empty, or empty ADF).
+- **Only after the gate passes:** derive tests, write **`tests.json`**, create Jira Tests, or apply **Empty story** (below) if description + AC are genuinely empty.
+
+**Failed gate (MCP error, missing tool, auth/network failure, missing/empty Jira `summary`):** **CI must fail.** **Do not** write **`tests.json`** or **`meta.json`**. **`scripts/verify-mcp-jira.js`** exits non-zero when **`tests.json`** is missing under **`generated/jira-tests/<STORY_KEY>/`**, so GitHub Actions shows the job **failed** (red). **Never** use **`tests: []`** + empty **`meta.json`** to simulate success.
+
+## Jira fetch required (not the same as empty story)
+
+This section aligns with the **Pre-generation MCP gate** above.
+
+- **Empty story** (below) applies **only** after **`jira_getIssue(STORY_KEY)`** **succeeds** (gate passed) and you have **actually read** the story’s **description** and AC/DoD-style fields from the response.
+- If **Jira MCP is unavailable**, **`jira_getIssue`** **fails**, or the **gate** does not pass: **do not** treat that as an empty story. **Do not** write **`tests: []`** + **`meta.json`**. **Do not** produce a result that looks like a successful empty-story outcome.
+- **CI:** Use **Generate Test Cases** on GitHub Actions (rendered **`.cursor/mcp.json`** + secrets) or **Cursor IDE** with working Jira MCP. If you cannot pass the gate, **omit** **`generated/jira-tests/<STORY_KEY>/tests.json`** so **`scripts/verify-mcp-jira.js`** fails; **never** substitute guesses or Sub-task text for the story body.
+
 ## Empty story — **do not** create tests
 
-**No testable content** when **description** is empty (incl. empty ADF) **and** AC/DoD-style fields you fetched are empty. **Summary alone** is not enough.
+**No testable content** when **description** is empty (incl. empty ADF) **and** AC/DoD-style fields you fetched are empty—**after** the **Pre-generation MCP gate** passed (successful **`jira_getIssue(STORY_KEY)`**). **Jira `summary` alone** is not enough to invent scenarios when description + AC are empty.
 
 Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpCreatedKeys": []`**. No **`jira_createIssue`**. No Sub-task backfill.
 

@@ -43,11 +43,14 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 2. **`jira_get_issue`** with **`issuetype`**, **`parent`**, **`summary`**.
 3. If Sub-task (or equivalent) and **`parent.key`** exists → **`STORY_KEY = parent.key`**. Original key is **trigger only**; do **not** use Sub-task body for scenarios.
 4. Else **`STORY_KEY`** = that issue’s key.
-5. Load requirements from **`jira_get_issue(STORY_KEY)`**: **`description`**, AC/DoD custom fields, etc.
+5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author **`tests[]`** or Markdown cases until this passes. On failure: **do not** write **`tests.json`** / **`meta.json`** in CI (job must fail at verify)—see **`.cursor/rules/jira-test-issues.mdc`** (**Pre-generation MCP gate**).
+6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error).
 
 ## Empty story
 
-If **description** has no substantive body **and** AC/DoD fields are empty: **no** invented tests, **no** Sub-task backfill. **CI:** **`tests: []`**, **`meta.json`** with **`mcpCreatedKeys: []`** — **`.cursor/rules/jira-test-issues.mdc`**. **Markdown:** short note only, no fake **`##`** cases.
+Applies **only after** a **successful** **`jira_get_issue(STORY_KEY)`** shows **description** has no substantive body **and** AC/DoD fields are empty. Then: **no** invented tests, **no** Sub-task backfill. **CI:** **`tests: []`**, **`meta.json`** with **`mcpCreatedKeys: []`** — **`jira-test-issues.mdc`**. **Markdown:** short note only, no fake **`##`** cases.
+
+If Jira tools are **unavailable** or the fetch **errors**, **do not** use this path—**do not** write empty **`tests.json`** as if the story were empty. Fetch in **GitHub Actions** or **IDE with MCP** first (see **`jira-test-issues.mdc`** → **Jira fetch required**).
 
 ## GitHub Actions (this repo)
 
@@ -56,6 +59,7 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 ## Checklist
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
-- [ ] Empty story → no fabricated tests (see **Empty story** above).
+- [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
+- [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.
