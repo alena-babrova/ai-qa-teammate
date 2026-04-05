@@ -81,8 +81,11 @@ jobs:
           PROMPT="$(node scripts/build-ci-prompt.js)"
           # Visible in the Actions UI (annotations) right before CLI requests start.
           echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
+          echo "Cursor Agent CLI: streaming run log (JSON lines; partial text deltas when the CLI emits them)."
           # Non-interactive CI: trust the checked-out repo (avoids "Workspace Trust Required" prompt).
-          "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print
+          # stream-json + stream-partial-output flushes progress to the job log instead of buffering until exit.
+          "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print \
+            --output-format stream-json --stream-partial-output
 
       - name: Verify MCP created all Test issues in Jira
         run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
