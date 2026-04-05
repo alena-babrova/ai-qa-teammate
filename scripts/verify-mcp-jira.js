@@ -7,7 +7,7 @@
  * Usage: node scripts/verify-mcp-jira.js <STORY_KEY>
  * Looks for generated/jira-tests/<STORY_KEY>/tests.json first; if missing, tries ISSUE_KEY env
  * when it differs (agent sometimes writes under the Sub-task key by mistake).
- * Summary checks always use STORY_KEY (canonical story key).
+ * Summary checks: each test title must be non-empty and must not contain STORY_KEY (or ISSUE_KEY when it differs).
  */
 
 import fs from "fs";
@@ -37,13 +37,24 @@ function validateMcpMeta(manifest, meta) {
   return null;
 }
 
-/** @param {{ tests: unknown[] }} manifest @param {string} storyKey */
-function validateSummariesIncludeStoryKey(manifest, storyKey) {
+/** @param {{ tests: unknown[] }} manifest @param {string} storyKey @param {string | undefined} issueKey */
+function validateSummariesOmitIssueKeys(manifest, storyKey, issueKey) {
   for (let i = 0; i < manifest.tests.length; i++) {
     const t = manifest.tests[i];
     const summary = t && typeof t === "object" && t !== null ? t.summary : undefined;
-    if (typeof summary !== "string" || !summary.includes(storyKey)) {
-      return `tests[${i}].summary must include story key "${storyKey}" (Sub-task dispatch key must not replace story key in titles).`;
+    if (typeof summary !== "string" || summary.trim() === "") {
+      return `tests[${i}].summary must be a non-empty string.`;
+    }
+    if (summary.includes(storyKey)) {
+      return `tests[${i}].summary must not contain the User Story key "${storyKey}" (use EPMRPP title only; traceability is via folder link and Jira relations).`;
+    }
+    if (
+      issueKey &&
+      keyRe.test(issueKey) &&
+      issueKey !== storyKey &&
+      summary.includes(issueKey)
+    ) {
+      return `tests[${i}].summary must not contain Sub-task dispatch key "${issueKey}" when it differs from story key "${storyKey}".`;
     }
   }
   return null;
@@ -51,7 +62,7 @@ function validateSummariesIncludeStoryKey(manifest, storyKey) {
 
 function main() {
   const storyKey = process.argv[2]?.trim();
-  const issueKey = process.env.ISSUE_KEY?.trim();
+  const issueKeyEnv = process.env.ISSUE_KEY?.trim();
 
   if (!storyKey || !keyRe.test(storyKey)) {
     console.error("Usage: node scripts/verify-mcp-jira.js <STORY_KEY>");
@@ -60,8 +71,8 @@ function main() {
 
   /** @type {string[]} */
   const dirKeys = [storyKey];
-  if (issueKey && keyRe.test(issueKey) && issueKey !== storyKey) {
-    dirKeys.push(issueKey);
+  if (issueKeyEnv && keyRe.test(issueKeyEnv) && issueKeyEnv !== storyKey) {
+    dirKeys.push(issueKeyEnv);
   }
 
   let outDir = null;
@@ -127,7 +138,11 @@ function main() {
     process.exit(0);
   }
 
-  const summaryErr = validateSummariesIncludeStoryKey(manifest, storyKey);
+  const summaryErr = validateSummariesOmitIssueKeys(
+    manifest,
+    storyKey,
+    issueKeyEnv,
+  );
   if (summaryErr) {
     console.error(summaryErr);
     process.exit(1);

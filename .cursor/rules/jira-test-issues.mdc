@@ -33,7 +33,7 @@ Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) o
 
 ## Always use **STORY_KEY** — verify first
 
-- **CI:** **`ISSUE_KEY`** = dispatch target; **`STORY_KEY`** = workflow-resolved story (parent when target is Sub-task). If they **differ**, **`ISSUE_KEY`** is **trigger only**. Scope: **`jira_getIssue(STORY_KEY)`** only — description, summary (title context), AC/DoD fields. **`generated/jira-tests/<STORY_KEY>/`**, **`tests[].summary`**, Test **links** → all **`STORY_KEY`**.
+- **CI:** **`ISSUE_KEY`** = dispatch target; **`STORY_KEY`** = workflow-resolved story (parent when target is Sub-task). If they **differ**, **`ISSUE_KEY`** is **trigger only**. Scope: **`jira_getIssue(STORY_KEY)`** only — description, summary (title context), AC/DoD fields. **`generated/jira-tests/<STORY_KEY>/`** and Test **links** use **`STORY_KEY`**; **`tests[].summary`** (test case **names**) must **not** contain **`STORY_KEY`** or the Sub-task **`ISSUE_KEY`** when they differ (**`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**).
 - **IDE:** User may paste a Sub-task. **`jira_getIssue`** → if Sub-task, **`STORY_KEY = parent.key`**, then fetch the story. Never use Sub-task **description**/**summary** for scenarios when the story is the parent.
 
 ## Pre-generation MCP gate (before any tests)
@@ -79,7 +79,7 @@ Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpC
 }
 ```
 
-- **`summary`:** Must include **`STORY_KEY`**. Sub-task key must **not** appear in **`summary`** when it differs from **`STORY_KEY`**. Title shape: **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**.
+- **`summary`:** Plain EPMRPP title only—**do not** put **`STORY_KEY`** or (when it differs) Sub-task **`ISSUE_KEY`** in the text. Title shape: **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**.
 
 ## `meta.json`
 

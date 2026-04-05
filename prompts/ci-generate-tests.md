@@ -4,6 +4,6 @@
 
 2. **Generate tests.** Use **only** that story payload (never Sub-task body when keys differ). Emit **`generated/jira-tests/__STORY_KEY__/tests.json`**, create/link **Test** issues via MCP, and **`meta.json`** as in **`jira-test-issues.mdc`**.
 
-3. **Format and shape.** Style and wording: **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**. How fields map to **`tests[]`** / Jira: **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+3. **Format and shape.** Style and wording: **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**. **`tests[].summary`** / Jira Test **Summary** = EPMRPP title **without** **`__STORY_KEY__`** (or Sub-task **`__ISSUE_KEY__`** when it differs). How fields map to **`tests[]`** / Jira: **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
 
 No questions; no secrets in repo files.

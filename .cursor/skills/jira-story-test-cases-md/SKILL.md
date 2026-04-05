@@ -18,14 +18,14 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 
 | Deliverable | Mapping |
 |-------------|---------|
-| **Jira Test issue** | **Test Steps** custom field ← one string: *Preconditions* block + *Steps* block (labels and `#` lines as in the format rule). **Expected result** field ← *Expected results* block. **Summary** ← EPMRPP title line **and** must include **`STORY_KEY`** (see **`jira-test-issues.mdc`**). |
+| **Jira Test issue** | **Test Steps** custom field ← one string: *Preconditions* block + *Steps* block (labels and `#` lines as in the format rule). **Expected result** field ← *Expected results* block. **Summary** ← EPMRPP title line only (**no** **`STORY_KEY`** in the title; link covers traceability — **`jira-test-issues.mdc`**). |
 | **`tests.json` (`tests[]`)** | One object per logical test. **`testSteps`** = same combined string as Jira Test Steps above. **`expectedResult`** = *Expected results* string. **`summary`** = Jira Test title. **`description`** = optional Markdown. |
-| **Markdown file** | One **`## <title>`** per test; under each, *Preconditions* / *Steps* / *Expected results* blocks matching the format rule. Top link: **`https://<your-jira>/browse/<STORY_KEY>`**. Filename: **`<STORY_KEY>-test-cases.md`** unless the user specifies otherwise. |
+| **Markdown file** | One **`## <title>`** per test (**no** **`STORY_KEY`** in each **`##`** title); under each, *Preconditions* / *Steps* / *Expected results* blocks matching the format rule. Top link: **`https://<your-jira>/browse/<STORY_KEY>`**. Filename: **`<STORY_KEY>-test-cases.md`** unless the user specifies otherwise. |
 
 **Minimal Markdown shape** (repeat per case):
 
 ```markdown
-# Test cases: <STORY_KEY> — <short title from story summary>
+# Test cases: <short title from story summary>
 **User story:** https://…/browse/<STORY_KEY>
 ---
 ## <Area>. <Short behavior-focused title>
