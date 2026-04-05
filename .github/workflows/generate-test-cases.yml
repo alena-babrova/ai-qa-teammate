@@ -46,6 +46,20 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Validate Jira credentials
+        run: |
+          if [ -z "${JIRA_BASE_URL}" ] || [ -z "${JIRA_USER_EMAIL}" ] || [ -z "${JIRA_API_TOKEN}" ]; then
+            echo "Set repository secrets JIRA_BASE_URL, JIRA_USER_EMAIL, and JIRA_API_TOKEN for Jira read/write."
+            exit 1
+          fi
+
+      - name: Jira read/write check and pipeline start comment
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/jira-pipeline-start.js
+
       - name: Render MCP config from template
         run: node scripts/render-mcp-config.js
 

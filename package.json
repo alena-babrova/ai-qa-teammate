@@ -7,6 +7,7 @@
   },
   "scripts": {
     "render-mcp": "node scripts/render-mcp-config.js",
-    "verify:jira-mcp": "node scripts/verify-mcp-jira.js"
+    "verify:jira-mcp": "node scripts/verify-mcp-jira.js",
+    "jira:pipeline-start": "node scripts/jira-pipeline-start.js"
   }
 }
