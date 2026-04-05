@@ -1,0 +1,88 @@
+---
+description: Jira Test issue fields, MCP create/link, STORY_KEY, CI tests.json and meta.json
+alwaysApply: true
+---
+
+# Jira Test issues and CI output
+
+## Creating Test issues in Jira
+
+Edit the table for your instance.
+
+| What | Value |
+|------|--------|
+| **Project key** | `EPMRPP` |
+| **Issue type** | `Test` |
+| **Label** (mark AI-generated Tests) | `ai-generated` |
+| **Test Steps** field (preconditions + steps) | `customfield_19206` |
+| **Expected result** field | `customfield_19207` |
+
+Use these in **`jira_createIssue`** / **`jira_updateIssue`** (or equivalent MCP). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
+
+**Create and link** Test issues **only via Jira MCP**. **Link** each Test to the **story** (**`STORY_KEY`**). No REST publish path in this pipeline.
+
+## Cursor Agent CLI (headless)
+
+- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow. **Do not** add scripts/docs that run the headless agent locally.
+
+## IDE vs CI
+
+- **Cursor IDE:** rules, **`.cursor/skills/`**, **`.cursor/mcp.json`** (from **`.cursor/mcp.template.json`** via **`render-mcp-config.js`**). Local MCP: one-line setup — edit **`.cursor/mcp.template.json`**, run **`node scripts/render-mcp-config.js`** with **`JIRA_API_TOKEN`** and **`JIRA_HOST`** or **`JIRA_BASE_URL`**.
+- You may hand-edit **`generated/jira-tests/<STORY_KEY>/`**; headless generation is **CI-only**.
+- **GitHub Actions:** **never** ask blocking questions. Apply EPMRPP style via **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; derive tests per **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+
+## Always use **STORY_KEY** — verify first
+
+- **CI:** **`ISSUE_KEY`** = dispatch target; **`STORY_KEY`** = workflow-resolved story (parent when target is Sub-task). If they **differ**, **`ISSUE_KEY`** is **trigger only**. Scope: **`jira_getIssue(STORY_KEY)`** only — description, summary (title context), AC/DoD fields. **`generated/jira-tests/<STORY_KEY>/`**, **`tests[].summary`**, Test **links** → all **`STORY_KEY`**.
+- **IDE:** User may paste a Sub-task. **`jira_getIssue`** → if Sub-task, **`STORY_KEY = parent.key`**, then fetch the story. Never use Sub-task **description**/**summary** for scenarios when the story is the parent.
+
+## Empty story — **do not** create tests
+
+**No testable content** when **description** is empty (incl. empty ADF) **and** AC/DoD-style fields you fetched are empty. **Summary alone** is not enough.
+
+Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpCreatedKeys": []`**. No **`jira_createIssue`**. No Sub-task backfill.
+
+## Output directory
+
+**Only** **`generated/jira-tests/<STORY_KEY>/`**. **`STORY_KEY`** = story used for requirements (in CI: parent when input was Sub-task).
+
+## `tests.json`
+
+```json
+{
+  "version": 1,
+  "tests": [
+    {
+      "summary": "string (required)",
+      "testSteps": "string (Preconditions + Steps as plain text for Jira Test Steps field)",
+      "expectedResult": "string (maps to Expected result custom field)",
+      "description": "optional Markdown"
+    }
+  ]
+}
+```
+
+- **`summary`:** Must include **`STORY_KEY`**. Sub-task key must **not** appear in **`summary`** when it differs from **`STORY_KEY`**. Title shape: **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**.
+
+## `meta.json`
+
+After MCP creates Tests **or** when **`tests`** is empty:
+
+```json
+{
+  "jiraPublish": "mcp",
+  "mcpCreatedKeys": ["PROJ-201", "PROJ-202"]
+}
+```
+
+**`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). **`scripts/verify-mcp-jira.js`** enforces this in CI.
+
+## Jira MCP (CI)
+
+- Render **`.cursor/mcp.json`** from **`.cursor/mcp.template.json`** on the runner.
+- Prefer the **same Jira project** as the story unless requirements say otherwise.
+- **Reads** for test design: **`jira_getIssue(STORY_KEY)`** only (plus searches scoped to that story). **Writes:** MCP only; if linking is unsupported, use your team’s MCP-side approach.
+
+## Safety
+
+- **Never** put secrets or tokens under **`generated/`** or in repo files.

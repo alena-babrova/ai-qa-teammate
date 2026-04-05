@@ -4,7 +4,8 @@
  * Env: ISSUE_KEY (required) — workflow dispatch key (often a Sub-task; trigger only when STORY_KEY differs).
  * STORY_KEY (optional; defaults to ISSUE_KEY) — set by workflow after resolve-output-key.js: canonical story
  * (parent when dispatch is Sub-task). The agent must use STORY_KEY for requirements, generated/jira-tests/ paths,
- * tests[].summary, and linking Tests — never substitute ISSUE_KEY when the two differ. See prompts/ci-generate-tests.md.
+ * tests[].summary, and linking Tests — never substitute ISSUE_KEY when the two differ.
+ * Repo contract: prompts/ci-generate-tests.md + .cursor/rules/jira-test-issues.mdc.
  */
 
 import fs from "fs";

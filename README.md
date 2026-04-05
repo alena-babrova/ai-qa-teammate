@@ -30,7 +30,7 @@ For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SEC
 
 ## Other setup
 
-- **Jira project, Test type, and custom fields:** [`.cursor/rules/jira-test-create.mdc`](.cursor/rules/jira-test-create.mdc).
+- **Jira Test issues, custom fields, and CI manifests:** [`.cursor/rules/jira-test-issues.mdc`](.cursor/rules/jira-test-issues.mdc).
 - **Conventions** for titles, steps, and expected results: [`.cursor/rules/`](.cursor/rules/).
 
 ## Output

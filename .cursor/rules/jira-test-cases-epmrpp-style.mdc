@@ -7,9 +7,9 @@ alwaysApply: true
 
 ## When this applies
 
-Whenever the user asks to **create test cases from a Jira** story (or equivalent), match the conventions below. **Format only** — the **jira-story-test-cases-md** skill handles Jira fetch and deliverable shape (**`tests.json`** vs Markdown); use **this rule** as the default EPMRPP style (not a bare generic template).
+Whenever you **author** manual test cases from a Jira story (Markdown or **`tests.json`** fields), match the conventions below. **Format only** — Jira fetch, **`STORY_KEY`**, and CI manifests are in **`.cursor/rules/jira-test-issues.mdc`** and **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
 
-If the workflow or user gives a **Sub-task** key, that issue is **only a trigger**; **titles and scope** still refer to the **story** (**`STORY_KEY`** — parent when applicable). See **`.cursor/rules/ai-test-generator.mdc`** (**Always use STORY_KEY — verify first**).
+Sub-task as input: **titles** still use the canonical **story** key (**`STORY_KEY`**) per **`jira-test-issues.mdc`**.
 
 ## Summary line (title)
 
