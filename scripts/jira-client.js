@@ -1,7 +1,6 @@
 /**
  * Minimal Jira Server/DC REST client (Basic auth).
- * Jira 10.x: set JIRA_REST_API_VERSION=3 (especially for comments — API v2 plain `body` strings
- * may not appear in the UI).
+ * Uses REST API v3 only (`/rest/api/3/...`). Comments use Atlassian Document Format (ADF).
  */
 
 import { Buffer } from "buffer";
@@ -32,18 +31,14 @@ export function plainTextToAdfDoc(text) {
   };
 }
 
-/**
- * @param {{ baseUrl: string, email: string, apiToken: string, apiVersion?: string }} opts
- */
+/** @param {{ baseUrl: string, email: string, apiToken: string }} opts */
 export function createJiraClient(opts) {
-  const apiVersion =
-    opts.apiVersion ?? process.env.JIRA_REST_API_VERSION ?? "2";
   const { baseUrl, email, apiToken } = opts;
   const base = baseUrl.replace(/\/+$/, "");
   const auth = Buffer.from(`${email}:${apiToken}`, "utf8").toString("base64");
 
   async function request(method, apiPath, body) {
-    const url = `${base}/rest/api/${apiVersion}${apiPath}`;
+    const url = `${base}/rest/api/3${apiPath}`;
     const headers = {
       Authorization: `Basic ${auth}`,
       Accept: "application/json",
@@ -96,14 +91,10 @@ export function createJiraClient(opts) {
       });
     },
     async addComment(issueKey, bodyText) {
-      const payload =
-        apiVersion === "3"
-          ? { body: plainTextToAdfDoc(bodyText) }
-          : { body: bodyText };
       return request(
         "POST",
         `/issue/${encodeURIComponent(issueKey)}/comment`,
-        payload,
+        { body: plainTextToAdfDoc(bodyText) },
       );
     },
   };

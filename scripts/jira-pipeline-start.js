@@ -57,7 +57,7 @@ async function main() {
   const comment = await client.addComment(issueKey, lines.join("\n"));
   if (comment?.id == null) {
     console.error(
-      "Jira comment API returned success but no comment id; check JIRA_REST_API_VERSION (use 3 for Jira 10.x).",
+      "Jira comment API returned success but no comment id in the response.",
       comment,
     );
     process.exit(1);

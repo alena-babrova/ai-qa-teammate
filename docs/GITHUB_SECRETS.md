@@ -17,10 +17,4 @@ Under **Settings → Secrets and variables → Actions → Variables**.
 |----------|----------|----------|
 | `CURSOR_AGENT_MODEL` | No | Overrides the default LLM for the headless Cursor Agent. If unset, the workflow uses **`model`** from **[`.cursor/ci/agent.json`](../.cursor/ci/agent.json)** (committed default). |
 
-### Jira REST API version
-
-The **Generate Test Cases** workflow sets **`JIRA_REST_API_VERSION=3`** on the job so Jira **10.x** comments use REST API **v3** with **Atlassian Document Format** (see **`scripts/jira-client.js`**). On v2, **`addComment`** with a plain string often returns HTTP success but the comment does not appear in the UI.
-
-For **`npm run jira:pipeline-start`** or other local runs against Jira 10, export **`JIRA_REST_API_VERSION=3`** (and the usual **`JIRA_*`** variables).
-
 To list model ids your account can use, run **`agent models`** (or **`agent --list-models`**) locally with **`CURSOR_API_KEY`** set; the string must match exactly (for example **`composer-2`**).
