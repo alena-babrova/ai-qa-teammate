@@ -1,35 +1,9 @@
 /**
  * Minimal Jira Server/DC REST client (Basic auth).
- * Uses REST API v3 only (`/rest/api/3/...`). Comments use Atlassian Document Format (ADF).
+ * Uses REST API v2 only (`/rest/api/2/...`) — wiki markup string for comment `body`.
  */
 
 import { Buffer } from "buffer";
-
-/**
- * Plain text (with newlines) → ADF doc for POST /rest/api/3/issue/.../comment
- * @param {string} text
- */
-export function plainTextToAdfDoc(text) {
-  const lines = text.split("\n");
-  /** @type {object[]} */
-  const inline = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (i > 0) {
-      inline.push({ type: "hardBreak" });
-    }
-    inline.push({ type: "text", text: lines[i] });
-  }
-  return {
-    type: "doc",
-    version: 1,
-    content: [
-      {
-        type: "paragraph",
-        content: inline.length ? inline : [{ type: "text", text: "" }],
-      },
-    ],
-  };
-}
 
 /** @param {{ baseUrl: string, email: string, apiToken: string }} opts */
 export function createJiraClient(opts) {
@@ -38,7 +12,7 @@ export function createJiraClient(opts) {
   const auth = Buffer.from(`${email}:${apiToken}`, "utf8").toString("base64");
 
   async function request(method, apiPath, body) {
-    const url = `${base}/rest/api/3${apiPath}`;
+    const url = `${base}/rest/api/2${apiPath}`;
     const headers = {
       Authorization: `Basic ${auth}`,
       Accept: "application/json",
@@ -91,11 +65,9 @@ export function createJiraClient(opts) {
       });
     },
     async addComment(issueKey, bodyText) {
-      return request(
-        "POST",
-        `/issue/${encodeURIComponent(issueKey)}/comment`,
-        { body: plainTextToAdfDoc(bodyText) },
-      );
+      return request("POST", `/issue/${encodeURIComponent(issueKey)}/comment`, {
+        body: bodyText,
+      });
     },
   };
 }
