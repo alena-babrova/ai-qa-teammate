@@ -144,9 +144,9 @@ jobs:
           # Visible in the Actions UI (annotations) right before CLI requests start.
           echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
           echo "Cursor Agent CLI: streaming run log (JSON lines; partial text deltas when the CLI emits them)."
-          # Non-interactive CI: trust the checked-out repo (avoids "Workspace Trust Required" prompt).
+          # Non-interactive CI: --trust = workspace; --approve-mcps + --force = no UI to approve MCP servers.
           # stream-json + stream-partial-output flushes progress to the job log instead of buffering until exit.
-          "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print \
+          "${AGENT_BIN}" --trust --approve-mcps --force --model "${MODEL}" -p "${PROMPT}" --print \
             --output-format stream-json --stream-partial-output
 
       # Missing tests.json here usually means Jira MCP read failed, gate failed, or the agent errored before writing output.

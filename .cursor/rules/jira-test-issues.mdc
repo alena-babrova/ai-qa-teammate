@@ -23,7 +23,7 @@ Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) o
 
 ## Cursor Agent CLI (headless)
 
-- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow. **Do not** add scripts/docs that run the headless agent locally.
+- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`** so MCP is not blocked by missing UI approval). **Do not** add scripts/docs that run the headless agent locally.
 
 ## IDE vs CI
 
