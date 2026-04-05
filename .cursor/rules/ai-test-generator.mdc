@@ -14,7 +14,7 @@ alwaysApply: true
 ## Local development (Cursor IDE)
 
 - Use **Cursor IDE** with this repository: **rules**, **`.cursor/skills/`**, **`.cursor/mcp.json`** (from **`.cursor/mcp.template.json`** via **`render-mcp-config.js`** or filled locally — gitignored), and Jira MCP.
-- You may hand-author or edit files under **`generated/jira-tests/<ISSUE_KEY>/`**; the **headless** generation step is CI-only.
+- You may hand-author or edit files under **`generated/jira-tests/<STORY_KEY>/`** (the story key, not the Sub-task dispatch key when they differ); the **headless** generation step is CI-only.
 
 ## Jira story test methodology (skill)
 
@@ -49,7 +49,8 @@ Path: **`generated/jira-tests/<STORY_KEY>/tests.json`** (see **Output directory*
 ```
 
 - **Project, issue type, and custom fields** for new Tests: **`.cursor/rules/jira-test-create.mdc`** (edit that rule for your Jira).
-- **Create and link every Test issue only via Jira MCP** (`@atlassian-dc-mcp/jira`). Use **`jira_createIssue`**, **`jira_updateIssue`**, and any linking approach your MCP tools support so each new Test is associated with the parent story.
+- **`summary` (Jira Test title):** Must include **`STORY_KEY`** as a substring (e.g. **`[EPMRPP-12345] Area. Page. Behavior`** or **`EPMRPP-12345 — Area. Page. Behavior`**). When the workflow target was a **Sub-task**, **do not** put the Sub-task key in **`summary`**—use **`STORY_KEY`** only. See **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** (CI / **`tests.json`**).
+- **Create and link every Test issue only via Jira MCP** (`@atlassian-dc-mcp/jira`). Use **`jira_createIssue`**, **`jira_updateIssue`**, and any linking approach your MCP tools support so each new Test is associated with the **story** (**`STORY_KEY`**).
 
 ## `meta.json` (required after MCP create)
 
@@ -63,7 +64,7 @@ After **every** Test exists in Jira and is linked to the parent, write **`meta.j
 ```
 
 - **`mcpCreatedKeys`**: same **length** and **order** as **`tests`** in `tests.json`.
-- **`scripts/verify-mcp-jira.js`** runs in CI; the job **fails** if **`meta.json`** is missing or invalid. There is **no** REST publish path for Test issues.
+- **`scripts/verify-mcp-jira.js`** runs in CI; the job **fails** if **`meta.json`** is missing or invalid, or if any **`tests[].summary`** does not contain **`STORY_KEY`**. There is **no** REST publish path for Test issues.
 
 ## Jira: MCP only (Test creation)
 

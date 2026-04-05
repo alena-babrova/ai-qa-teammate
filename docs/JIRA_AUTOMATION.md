@@ -2,7 +2,7 @@
 
 ## Goal
 
-When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) writes **`generated/jira-tests/<KEY>/tests.json`**, creates and links **Test** issues in Jira **via Jira MCP only**, and writes **`meta.json`** so CI can verify success.
+When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) writes **`generated/jira-tests/<STORY_KEY>/tests.json`** (resolved story key—parent when the labeled issue is a Sub-task), creates and links **Test** issues to that **story** in Jira **via Jira MCP only**, and writes **`meta.json`** so CI can verify success.
 
 ## Jira Automation rule (outline)
 

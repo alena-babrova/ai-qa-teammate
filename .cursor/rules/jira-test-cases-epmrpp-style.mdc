@@ -11,6 +11,7 @@ Whenever the user asks to **create test cases from a Jira** story (or equivalent
 
 ## Summary line (title)
 
+- **GitHub Actions / `tests.json`:** Each **`tests[].summary`** must contain the Jira **story key** **`STORY_KEY`** (the parent when the dispatch was a Sub-task). Prefer **`[STORY-123] `** as a leading prefix before the EPMRPP title, or **`STORY-123 — `** before the rest—**`STORY-123`** must match the real key. Do **not** use the Sub-task dispatch key in **`summary`** when it differs from **`STORY_KEY`**.
 - **UI / functional:** `<Area>. <Page>. <Behavior>` — segments separated by **period + space**.
 - **Page naming:** Either `Projects page` or `"Projects"` page (quoted page name when it matches the nav label); modal/feature names in **double quotes** (`"Rename project"`).
 - **Permissions:** Insert an extra segment: `<Area>. <Page>. Permissions. <Behavior>` (e.g. Admin not assigned to project can still rename).

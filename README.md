@@ -35,7 +35,7 @@ For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SEC
 
 ## Output
 
-Generated content for each run lives under **`generated/jira-tests/<ISSUE_KEY>/`** (gitignored except a **`.gitkeep`**). Helper scripts are listed in **`package.json`**.
+Generated content for each run lives under **`generated/jira-tests/<STORY_KEY>/`**, where **`STORY_KEY`** is the **story** the workflow resolves from your input (the **parent** when you dispatch a **Sub-task**, otherwise the same as the key you entered). Gitignored except a **`.gitkeep`**. Helper scripts are listed in **`package.json`**.
 
 ## Documentation
 

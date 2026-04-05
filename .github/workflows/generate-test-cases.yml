@@ -49,7 +49,7 @@ jobs:
       - name: Render MCP config from template
         run: node scripts/render-mcp-config.js
 
-      - name: Resolve story key (Sub-task uses parent)
+      - name: Resolve STORY_KEY (Sub-task → parent story)
         run: node scripts/resolve-output-key.js >> "$GITHUB_ENV"
 
       - name: Install Cursor Agent CLI

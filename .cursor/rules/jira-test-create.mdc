@@ -15,4 +15,4 @@ Edit the table for your instance.
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
 
-Use these when creating or updating **Test** issues (e.g. in `jira_createIssue` / `jira_updateIssue` payloads). **Every** new Test must include the **`ai-generated`** label (e.g. `labels` inside `customFields` when the tool expects it). Ensure that label exists in Jira or can be added on create, per your project settings.
+Use these when creating or updating **Test** issues (e.g. in `jira_createIssue` / `jira_updateIssue` payloads). **Every** new Test must include the **`ai-generated`** label (e.g. `labels` inside `customFields` when the tool expects it). Ensure that label exists in Jira or can be added on create, per your project settings. **Link** each new Test to the **story** (**`STORY_KEY`** in CI—the parent when dispatch was a Sub-task); **summaries** must include **`STORY_KEY`**, not the Sub-task key. Details: **`.cursor/rules/ai-test-generator.mdc`**.

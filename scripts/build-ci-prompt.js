@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Writes the Cursor Agent CI prompt to stdout.
- * Env: ISSUE_KEY (required), STORY_KEY (optional; defaults to ISSUE_KEY — set by workflow after resolve-output-key.js).
+ * Env: ISSUE_KEY (required) — workflow dispatch key (often a Sub-task).
+ * STORY_KEY (optional; defaults to ISSUE_KEY) — set by workflow after resolve-output-key.js: parent story when dispatch is Sub-task; used for paths, Jira links, and Test summary prefixes.
  */
 
 import fs from "fs";
