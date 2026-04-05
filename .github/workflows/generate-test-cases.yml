@@ -60,8 +60,32 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: node scripts/jira-pipeline-start.js
 
-      - name: Render MCP config from template
-        run: node scripts/render-mcp-config.js
+      - name: Generate MCP config from template
+        run: |
+          set -euo pipefail
+          export JIRA_API_TOKEN="${JIRA_API_TOKEN}"
+          export JIRA_EMAIL="${JIRA_USER_EMAIL}"
+          JIRA_HOST="$(python3 -c "
+          import os, urllib.parse
+          b = os.environ.get('JIRA_BASE_URL', '').strip()
+          assert b, 'JIRA_BASE_URL empty'
+          if '://' not in b:
+              b = 'https://' + b
+          print(urllib.parse.urlparse(b).netloc)
+          ")"
+          export JIRA_HOST
+          if ! command -v envsubst >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y gettext-base
+          fi
+          mkdir -p .cursor
+          envsubst < .cursor/mcp.template.json > .cursor/mcp.json
+          mkdir -p "${HOME}/.cursor"
+          cp .cursor/mcp.json "${HOME}/.cursor/mcp.json"
+          if grep -q '\${' "${HOME}/.cursor/mcp.json"; then
+            echo "::error::MCP template still contains unresolved \${...} placeholders"
+            exit 1
+          fi
+          echo "MCP config written to .cursor/mcp.json and ${HOME}/.cursor/mcp.json (contents not logged)."
 
       - name: Resolve STORY_KEY (Sub-task → parent story)
         run: node scripts/resolve-output-key.js >> "$GITHUB_ENV"
@@ -95,78 +119,85 @@ jobs:
           if [ -f .cursor/mcp.json ]; then
             echo "mcp.json: present ($(wc -c < .cursor/mcp.json | tr -d ' ') bytes; contents omitted—contains secrets)"
           else
-            echo "::error::.cursor/mcp.json is missing after Render MCP config"
+            echo "::error::.cursor/mcp.json is missing after Generate MCP config"
             exit 1
           fi
           echo "::endgroup::"
+          echo "::group::User MCP config (CLI)"
+          if [ -f "${HOME}/.cursor/mcp.json" ]; then
+            echo "~/.cursor/mcp.json: present ($(wc -c < "${HOME}/.cursor/mcp.json" | tr -d ' ') bytes; contents omitted)"
+          else
+            echo "::warning::~/.cursor/mcp.json missing after copy"
+          fi
+          echo "::endgroup::"
 
-      # - name: Run Cursor Agent (headless)
-      #   env:
-      #     CI: "true"
-      #     CURSOR_AGENT_MODEL: ${{ vars.CURSOR_AGENT_MODEL }}
-      #     STORY_KEY: ${{ env.STORY_KEY }}
-      #     ISSUE_KEY: ${{ env.ISSUE_KEY }}
-      #   run: |
-      #     if [ -z "${CURSOR_API_KEY}" ]; then
-      #       echo "CURSOR_API_KEY secret is not set."
-      #       exit 1
-      #     fi
-      #     if command -v cursor-agent >/dev/null 2>&1; then
-      #       AGENT_BIN=cursor-agent
-      #     elif command -v agent >/dev/null 2>&1; then
-      #       AGENT_BIN=agent
-      #     else
-      #       echo "Cursor Agent CLI not found on PATH after install."
-      #       exit 1
-      #     fi
-      #     echo "STORY_KEY=${STORY_KEY} (output dir) ISSUE_KEY=${ISSUE_KEY} (workflow target)"
-      #     MODEL="$(node scripts/resolve-cursor-agent-model.js)"
-      #     PROMPT="$(node scripts/build-ci-prompt.js)"
-      #     # Visible in the Actions UI (annotations) right before CLI requests start.
-      #     echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
-      #     echo "Cursor Agent CLI: streaming run log (JSON lines; partial text deltas when the CLI emits them)."
-      #     # Non-interactive CI: trust the checked-out repo (avoids "Workspace Trust Required" prompt).
-      #     # stream-json + stream-partial-output flushes progress to the job log instead of buffering until exit.
-      #     "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print \
-      #       --output-format stream-json --stream-partial-output
+      - name: Run Cursor Agent (headless)
+        env:
+          CI: "true"
+          CURSOR_AGENT_MODEL: ${{ vars.CURSOR_AGENT_MODEL }}
+          STORY_KEY: ${{ env.STORY_KEY }}
+          ISSUE_KEY: ${{ env.ISSUE_KEY }}
+        run: |
+          if [ -z "${CURSOR_API_KEY}" ]; then
+            echo "CURSOR_API_KEY secret is not set."
+            exit 1
+          fi
+          if command -v cursor-agent >/dev/null 2>&1; then
+            AGENT_BIN=cursor-agent
+          elif command -v agent >/dev/null 2>&1; then
+            AGENT_BIN=agent
+          else
+            echo "Cursor Agent CLI not found on PATH after install."
+            exit 1
+          fi
+          echo "STORY_KEY=${STORY_KEY} (output dir) ISSUE_KEY=${ISSUE_KEY} (workflow target)"
+          MODEL="$(node scripts/resolve-cursor-agent-model.js)"
+          PROMPT="$(node scripts/build-ci-prompt.js)"
+          # Visible in the Actions UI (annotations) right before CLI requests start.
+          echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
+          echo "Cursor Agent CLI: streaming run log (JSON lines; partial text deltas when the CLI emits them)."
+          # Non-interactive CI: trust the checked-out repo (avoids "Workspace Trust Required" prompt).
+          # stream-json + stream-partial-output flushes progress to the job log instead of buffering until exit.
+          "${AGENT_BIN}" --trust --model "${MODEL}" -p "${PROMPT}" --print \
+            --output-format stream-json --stream-partial-output
 
-      # # Missing tests.json here usually means Jira MCP read failed, gate failed, or the agent errored before writing output.
-      # - name: Verify MCP created all Test issues in Jira
-      #   run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
+      # Missing tests.json here usually means Jira MCP read failed, gate failed, or the agent errored before writing output.
+      - name: Verify MCP created all Test issues in Jira
+        run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
 
-      # - name: Log generated test cases to job log
-      #   if: always()
-      #   run: |
-      #     for KEY in "${STORY_KEY}" "${ISSUE_KEY}"; do
-      #       [ -z "${KEY}" ] && continue
-      #       DIR="generated/jira-tests/${KEY}"
-      #       if [ -f "${DIR}/tests.json" ]; then
-      #         echo "::group::Generated test cases (${KEY})"
-      #         echo "--- tests.json ---"
-      #         python3 -m json.tool "${DIR}/tests.json" 2>/dev/null || cat "${DIR}/tests.json"
-      #         if [ -f "${DIR}/meta.json" ]; then
-      #           echo ""
-      #           echo "--- meta.json ---"
-      #           python3 -m json.tool "${DIR}/meta.json" 2>/dev/null || cat "${DIR}/meta.json"
-      #         fi
-      #         echo "::endgroup::"
-      #         exit 0
-      #       fi
-      #     done
-      #     echo "No generated/jira-tests/.../tests.json found to log."
+      - name: Log generated test cases to job log
+        if: always()
+        run: |
+          for KEY in "${STORY_KEY}" "${ISSUE_KEY}"; do
+            [ -z "${KEY}" ] && continue
+            DIR="generated/jira-tests/${KEY}"
+            if [ -f "${DIR}/tests.json" ]; then
+              echo "::group::Generated test cases (${KEY})"
+              echo "--- tests.json ---"
+              python3 -m json.tool "${DIR}/tests.json" 2>/dev/null || cat "${DIR}/tests.json"
+              if [ -f "${DIR}/meta.json" ]; then
+                echo ""
+                echo "--- meta.json ---"
+                python3 -m json.tool "${DIR}/meta.json" 2>/dev/null || cat "${DIR}/meta.json"
+              fi
+              echo "::endgroup::"
+              exit 0
+            fi
+          done
+          echo "No generated/jira-tests/.../tests.json found to log."
 
-      # - name: Upload generated output on failure
-      #   if: failure()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: generated-jira-tests-${{ env.ISSUE_KEY }}
-      #     path: generated/jira-tests/
-      #     if-no-files-found: ignore
+      - name: Upload generated output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-jira-tests-${{ env.ISSUE_KEY }}
+          path: generated/jira-tests/
+          if-no-files-found: ignore
 
-      # - name: Notify Jira on failure
-      #   if: failure()
-      #   env:
-      #     GITHUB_SERVER_URL: ${{ github.server_url }}
-      #     GITHUB_REPOSITORY: ${{ github.repository }}
-      #     GITHUB_RUN_ID: ${{ github.run_id }}
-      #   run: node scripts/notify-jira-failure.js
+      - name: Notify Jira on failure
+        if: failure()
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/notify-jira-failure.js
