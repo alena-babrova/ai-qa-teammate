@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
  * Reads .cursor/mcp.template.json and replaces ${ENV_NAME} with process.env[ENV_NAME].
- * If JIRA_HOST is unset but JIRA_BASE_URL is set, derives JIRA_HOST (hostname[:port]) for @atlassian-dc-mcp/jira.
- * Writes .cursor/mcp.json. Exits non-zero if any placeholder remains or JSON is invalid.
- * Does not print the rendered file (CI safety).
- *
- * CI may use envsubst + copy to ~/.cursor/mcp.json instead; keep this script for local / cross-platform use.
+ * Default server: ghcr.io/sooperset/mcp-atlassian (Jira-only; see https://github.com/sooperset/mcp-atlassian).
+ * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
+ * Derives JIRA_URL from JIRA_BASE_URL; maps repo secrets into upstream env names.
+ * Writes .cursor/mcp.json. Does not print secrets.
  */
 
 import fs from "fs";
@@ -20,22 +19,39 @@ const outPath = path.join(root, ".cursor", "mcp.json");
 const pattern = /\$\{([A-Z][A-Z0-9_]*)\}/g;
 
 /** @param {string} baseUrl */
-function deriveJiraHostFromBaseUrl(baseUrl) {
+function deriveRootUrl(baseUrl) {
   const trimmed = baseUrl.trim();
   if (!trimmed) return undefined;
   try {
-    const u = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
-    return u.host;
+    const withProto = trimmed.includes("://") ? trimmed : `https://${trimmed}`;
+    const u = new URL(withProto);
+    return `${u.protocol}//${u.host}`;
   } catch {
     return undefined;
   }
 }
 
-function main() {
-  if (!process.env.JIRA_HOST?.trim() && process.env.JIRA_BASE_URL?.trim()) {
-    const host = deriveJiraHostFromBaseUrl(process.env.JIRA_BASE_URL);
-    if (host) process.env.JIRA_HOST = host;
+function applyDefaults() {
+  if (!process.env.CONTAINER_CMD?.trim()) {
+    process.env.CONTAINER_CMD = "podman";
   }
+
+  if (!process.env.JIRA_URL?.trim() && process.env.JIRA_BASE_URL?.trim()) {
+    const u = deriveRootUrl(process.env.JIRA_BASE_URL);
+    if (u) process.env.JIRA_URL = u;
+  }
+
+  if (!process.env.JIRA_USERNAME?.trim() && process.env.JIRA_USER_EMAIL?.trim()) {
+    process.env.JIRA_USERNAME = process.env.JIRA_USER_EMAIL;
+  }
+
+  if (!process.env.JIRA_PERSONAL_TOKEN?.trim() && process.env.JIRA_API_TOKEN?.trim()) {
+    process.env.JIRA_PERSONAL_TOKEN = process.env.JIRA_API_TOKEN;
+  }
+}
+
+function main() {
+  applyDefaults();
 
   if (!fs.existsSync(templatePath)) {
     console.error(`Missing template: ${templatePath}`);

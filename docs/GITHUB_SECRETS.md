@@ -5,9 +5,11 @@ Add these under **Settings → Secrets and variables → Actions → Secrets** f
 | Secret | Required | Used for |
 |--------|----------|----------|
 | `CURSOR_API_KEY` | Yes | Cursor Agent CLI on the runner ([docs](https://docs.cursor.com/en/cli/github-actions)). |
-| `JIRA_BASE_URL` | Yes | In Actions, the workflow derives **`JIRA_HOST`** from this URL and runs **`envsubst`** on **`.cursor/mcp.template.json`** → **`.cursor/mcp.json`**, then copies to **`~/.cursor/mcp.json`** for the Cursor CLI. Also used by **`notify-jira-failure.js`**. Locally, **`npm run render-mcp`** uses **`scripts/render-mcp-config.js`** with the same template. |
-| `JIRA_USER_EMAIL` | Yes | Basic auth username for **`notify-jira-failure.js`** only (email or username per your Jira). **Test issues are not created by REST in this repository.** |
-| `JIRA_API_TOKEN` | Yes | Jira Data Center **personal access token** for **`@atlassian-dc-mcp/jira`** on the runner; same value is typically used as the REST password with **`JIRA_USER_EMAIL`** for the failure comment. |
+| `JIRA_BASE_URL` | Yes | Jira instance URL; **`scripts/render-mcp-config.js`** derives **`JIRA_URL`** (scheme + host) for **[mcp-atlassian](https://github.com/sooperset/mcp-atlassian)**. Also used by **`notify-jira-failure.js`**. |
+| `JIRA_USER_EMAIL` | Yes | Account id for Jira (email/username). Mapped to **`JIRA_USERNAME`** for **[mcp-atlassian](https://github.com/sooperset/mcp-atlassian)**; also used by **`notify-jira-failure.js`**. |
+| `JIRA_API_TOKEN` | Yes | Data Center **personal access token** (PAT). Rendered into **`JIRA_API_TOKEN`** and **`JIRA_PERSONAL_TOKEN`** for the MCP container. Same value is typically the REST password with **`JIRA_USER_EMAIL`** for the failure comment. |
+
+Locally, install **Docker** or **Podman**, set **`JIRA_BASE_URL`**, **`JIRA_USER_EMAIL`**, **`JIRA_API_TOKEN`**, then run **`npm run render-mcp`**. Use **`CONTAINER_CMD=docker`** if you do not use Podman.
 
 ## Actions variables (optional)
 

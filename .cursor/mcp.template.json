@@ -1,11 +1,26 @@
 {
   "mcpServers": {
-    "atlassian-jira-dc": {
-      "command": "npx",
-      "args": ["-y", "@atlassian-dc-mcp/jira"],
+    "atlassian": {
+      "command": "${CONTAINER_CMD}",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "JIRA_URL",
+        "-e",
+        "JIRA_USERNAME",
+        "-e",
+        "JIRA_API_TOKEN",
+        "-e",
+        "JIRA_PERSONAL_TOKEN",
+        "ghcr.io/sooperset/mcp-atlassian:latest"
+      ],
       "env": {
-        "JIRA_HOST": "${JIRA_HOST}",
-        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}"
+        "JIRA_URL": "${JIRA_URL}",
+        "JIRA_USERNAME": "${JIRA_USERNAME}",
+        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
+        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
       }
     }
   }

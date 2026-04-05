@@ -61,28 +61,16 @@ jobs:
         run: node scripts/jira-pipeline-start.js
 
       - name: Generate MCP config from template
+        env:
+          CONTAINER_CMD: docker
         run: |
           set -euo pipefail
-          export JIRA_API_TOKEN="${JIRA_API_TOKEN}"
-          export JIRA_EMAIL="${JIRA_USER_EMAIL}"
-          JIRA_HOST="$(python3 -c "
-          import os, urllib.parse
-          b = os.environ.get('JIRA_BASE_URL', '').strip()
-          assert b, 'JIRA_BASE_URL empty'
-          if '://' not in b:
-              b = 'https://' + b
-          print(urllib.parse.urlparse(b).netloc)
-          ")"
-          export JIRA_HOST
-          if ! command -v envsubst >/dev/null 2>&1; then
-            sudo apt-get update -qq && sudo apt-get install -y gettext-base
-          fi
-          mkdir -p .cursor
-          envsubst < .cursor/mcp.template.json > .cursor/mcp.json
+          docker pull ghcr.io/sooperset/mcp-atlassian:latest
+          node scripts/render-mcp-config.js
           mkdir -p "${HOME}/.cursor"
           cp .cursor/mcp.json "${HOME}/.cursor/mcp.json"
           if grep -q '\${' "${HOME}/.cursor/mcp.json"; then
-            echo "::error::MCP template still contains unresolved \${...} placeholders"
+            echo "::error::MCP config still contains unresolved \${...} placeholders"
             exit 1
           fi
           echo "MCP config written to .cursor/mcp.json and ${HOME}/.cursor/mcp.json (contents not logged)."

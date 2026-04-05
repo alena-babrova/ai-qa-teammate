@@ -17,7 +17,7 @@ Edit the table for your instance.
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
 
-Use these in **`jira_createIssue`** / **`jira_updateIssue`** (or equivalent MCP). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
+Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
 
 **Create and link** Test issues **only via Jira MCP**. **Link** each Test to the **story** (**`STORY_KEY`**). No REST publish path in this pipeline.
 
@@ -27,7 +27,7 @@ Use these in **`jira_createIssue`** / **`jira_updateIssue`** (or equivalent MCP)
 
 ## IDE vs CI
 
-- **Cursor IDE:** rules, **`.cursor/skills/`**, **`.cursor/mcp.json`** (from **`.cursor/mcp.template.json`** via **`npm run render-mcp`** / **`render-mcp-config.js`**, or **`envsubst`** with **`JIRA_HOST`** + **`JIRA_API_TOKEN`** exported). Template uses **`${JIRA_HOST}`** and **`${JIRA_API_TOKEN}`**.
+- **Cursor IDE:** rules, **`.cursor/skills/`**, **`.cursor/mcp.json`** from **`.cursor/mcp.template.json`** via **`npm run render-mcp`** (**`scripts/render-mcp-config.js`**). Default MCP is **[sooperset/mcp-atlassian](https://github.com/sooperset/mcp-atlassian)** (**`ghcr.io/sooperset/mcp-atlassian:latest`**; **`CONTAINER_CMD`** **`podman`** locally, **`docker`** in Actions). See **`docs/GITHUB_SECRETS.md`** / **`docs/JIRA_MCP_OPTIONS.md`**.
 - You may hand-edit **`generated/jira-tests/<STORY_KEY>/`**; headless generation is **CI-only**.
 - **GitHub Actions:** **never** ask blocking questions. Apply EPMRPP style via **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; derive tests per **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
 
@@ -57,7 +57,7 @@ This section aligns with the **Pre-generation MCP gate** above.
 
 **No testable content** when **description** is empty (incl. empty ADF) **and** AC/DoD-style fields you fetched are empty—**after** the **Pre-generation MCP gate** passed (successful **`jira_getIssue(STORY_KEY)`**). **Jira `summary` alone** is not enough to invent scenarios when description + AC are empty.
 
-Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpCreatedKeys": []`**. No **`jira_createIssue`**. No Sub-task backfill.
+Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpCreatedKeys": []`**. No **`jira_create_issue`** / **`jira_createIssue`**. No Sub-task backfill.
 
 ## Output directory
 
@@ -96,7 +96,7 @@ After MCP creates Tests **or** when **`tests`** is empty:
 
 ## Jira MCP (CI)
 
-- On the runner: generate **`.cursor/mcp.json`** with **`envsubst`**, copy to **`~/.cursor/mcp.json`** so the Cursor CLI can load MCP (see workflow **Generate MCP config from template**).
+- On the runner: **`docker pull`** **`ghcr.io/sooperset/mcp-atlassian:latest`**, **`node scripts/render-mcp-config.js`**, copy **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** so the Cursor CLI can load MCP (workflow **Generate MCP config from template**).
 - Prefer the **same Jira project** as the story unless requirements say otherwise.
 - **Reads** for test design: **`jira_getIssue(STORY_KEY)`** only (plus searches scoped to that story). **Writes:** MCP only; if linking is unsupported, use your team’s MCP-side approach.
 
