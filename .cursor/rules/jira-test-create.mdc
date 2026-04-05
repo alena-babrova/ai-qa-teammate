@@ -1,5 +1,5 @@
 ---
-description: Jira project, Test issue type, and custom fields for Test Steps / Expected result
+description: Jira project, Test issue type, labels, and custom fields for Test Steps / Expected result
 alwaysApply: true
 ---
 
@@ -11,7 +11,8 @@ Edit the table for your instance.
 |------|--------|
 | **Project key** | `EPMRPP` |
 | **Issue type** | `Test` |
+| **Label** (mark AI-generated Tests) | `ai-generated` |
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
 
-Use these when creating or updating **Test** issues (e.g. in `jira_createIssue` / `jira_updateIssue` payloads).
+Use these when creating or updating **Test** issues (e.g. in `jira_createIssue` / `jira_updateIssue` payloads). **Every** new Test must include the **`ai-generated`** label (e.g. `labels` inside `customFields` when the tool expects it). Ensure that label exists in Jira or can be added on create, per your project settings.
