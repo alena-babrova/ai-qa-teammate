@@ -162,13 +162,13 @@ function main() {
   if (err) {
     console.error(err);
     console.error(
-      "All Test issues must be created and linked via Jira MCP; REST publish is not used.",
+      "All Test issues must be synced via Jira MCP (create/update); REST publish is not used.",
     );
     process.exit(1);
   }
 
   console.log(
-    `OK: MCP created ${meta.mcpCreatedKeys.length} Test issue(s): ${meta.mcpCreatedKeys.join(", ")}`,
+    `OK: MCP synced ${meta.mcpCreatedKeys.length} Test issue(s): ${meta.mcpCreatedKeys.join(", ")}`,
   );
 }
 

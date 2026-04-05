@@ -25,9 +25,9 @@ Whenever you **author** manual test cases from a Jira story (Markdown or **`test
 
 - **Label variants:** `*Preconditions*:` or `*Pre-conditions:*` (hyphen allowed). Same for `*Steps*:`.
 - **Preconditions body (two acceptable patterns):**
-  - **Plain lines** (no `#`): fixture sentences such as `'Organization A' is created with at least one Project (e.g. Project1)`; use **single quotes** around org/project placeholders. Use `*italic*` for emphasis (`*External*`, `*not*`).
+  - **Plain lines** (no leading numbers): short fixture sentences, e.g. `Administrator user is logged in to RP.` or `'Organization A' is created with at least one Project (e.g. Project1)`; use **single quotes** around org/project placeholders. Use `*italic*` for emphasis (`*External*`, `*not*`).
   - **Numbered `# ` lines** (hash + space): same as [EPMRPP-91802](https://jiraeu.epam.com/browse/EPMRPP-91802) style when the team uses list preconditions throughout.
-- **Steps:** Each step on its own line with `# ` (a **leading space before `#`** is OK if matching a reference suite). Imperative voice.
+- **Steps — numbering:** Give **Steps** a single ordered list **`1.`**, **`2.`**, **`3.`**, … (one action per line). **Alternative** when matching an existing suite: each step on its own line with **`# `** (a **leading space before `#`** is OK). Imperative voice.
 - **Navigation:** `Login to RP as Admin` (or **Administrator user is logged in** / **Login to RP as the user from the preconditions**); `Go to "All Users" page` **or** `Navigate to "Projects" page of the 'Organization A'`; meatball menu phrasing: `Click on meatball menu for a project` / `Click meatball menu for 'Project1'`; `Click on "Meatball" menu -> Select "…" option` where applicable.
 
 ## API test steps and expectations
@@ -39,7 +39,9 @@ Whenever you **author** manual test cases from a Jira story (Markdown or **`test
 
 ## Expected results
 
-- Tie to **step numbers** (`3.`, `4.`, `6.`) — non-consecutive numbers are OK when one line bundles multiple checkpoints.
+- **Map every expected line to a real step:** The number at the start of each expected line must be a **step index that exists** in *Steps*. If steps use **`1.` … `N.`**, those indices are explicit; if steps use **`# `** lines only, count **top-level** step lines in order as **`1`** … **`N`** for mapping. **Do not** use expected numbers **greater than** the last step index (wrong: four steps but expected `5.`–`7.` — there is no step 5).
+- **Gaps are OK:** You may **skip** expected lines for steps that need no separate verification (e.g. only `3.` and `4.` when steps are `1.`–`4.`). Numbers must still refer to **actual** steps, not a separate counter.
+- **Several checks for one step:** Put **one** step number and group detail under it using sub-bullets (` - ` or `*`), e.g. after step 4 “Observe the modal”, use **`4.`** with bullets for *Name* field, *Cancel*, *Create*, close icon — **not** new top-level `5.`, `6.`, `7.`.
 - **Bullets:** use ` - ` (space-hyphen-space) **or** leading `*` lines (`* Team`) depending on reference; stay consistent within one test case.
 - UI inventory: control names in **double quotes**, **enabled** / **disabled** / **default**, success toasts (e.g. green bar text in quotes).
 

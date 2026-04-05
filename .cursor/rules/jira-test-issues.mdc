@@ -1,5 +1,5 @@
 ---
-description: Jira Test issue fields, MCP create/link, STORY_KEY, CI tests.json and meta.json
+description: Jira Test issue fields (incl. Folder customfield_24001), MCP sync (update/create), no-duplicate linked Tests, STORY_KEY, CI tests.json and meta.json
 alwaysApply: true
 ---
 
@@ -16,20 +16,38 @@ Edit the table for your instance.
 | **Label** (mark AI-generated Tests) | `ai-generated` |
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
+| **Test Library** (TM / library scope; UI may show as library) | `customfield_24000` |
+| **Folder** (path under library; UI may show as “Folder”) | `customfield_24001` |
+
+Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`** were confirmed via **`jira_get_issue`** on sample Test [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175) (`fields=*all`). On that issue, **`customfield_24000`** = `Test Library` and **`customfield_24001`** = `EPMRPP` (project-root folder only). **Do not** use that sample as the folder **target**—see **Test Folder (required)** below.
+
+### Test Folder (required)
+
+- **Do not** leave AI-generated Tests at the **EPMRPP project root** folder only. **`customfield_24001`** must reflect the team layout **`EPMRPP` → `AI Generated` → `<STORY_KEY>`** (not bare `EPMRPP` when the standard is the nested path).
+- **`<STORY_KEY>`** is the same canonical story key as elsewhere in this rule (parent when dispatch was a Sub-task).
+- Keep **`customfield_24000`** consistent with project practice (e.g. `Test Library` on [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175)) unless your instance requires a different library value.
+- If the folder **`AI Generated` / `<STORY_KEY>`** does not exist yet, create it under **`AI Generated`** in Jira Test Management (UI or whatever API your org supports) before or when filing Tests.
+
+### MCP create / update (custom fields)
+
+On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), and **`customfield_24001`** (Folder) using the **same value types** Jira returns for a reference Test already filed in the **target** folder (**preferred**). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or path strings. Exact format for the nested path (slash-separated string vs id) is instance-specific—**verify** with **`jira_get_issue`** on any Test already under **`EPMRPP / AI Generated / <some story key>`**.
 
 Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
 
 **Create and link** Test issues **only via Jira MCP**. **Link** each Test to the **story** (**`STORY_KEY`**). No REST publish path in this pipeline.
 
+### Sync with existing Jira Tests (no duplicates)
+
+Whenever test generation runs against a story that may already have **Test** issues.
+
+1. **After** the **Pre-generation MCP gate** passes, **before** bulk **`jira_create_issue`**, discover Tests already **linked** to **`STORY_KEY`**: e.g. **`jira_get_issue(STORY_KEY)`** with **`issuelinks`** (follow link type **Tests** / **tested by** / **tests** per your instance), and/or **`jira_search`** / JQL your MCP supports to list **Test** issues tied to that story.
+2. **Do not** create a second Test for the same logical case. Match existing issues to planned **`tests[]`** rows by **Jira Test Summary** ↔ **`tests[].summary`** (normalize for comparison: trim, case-insensitive). When a match exists, use **`jira_update_issue`** to refresh **summary**, **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`**, **`labels`**, and any other fields you maintain—**do not** **`jira_create_issue`** again for that row.
+3. Use **`jira_create_issue`** (and link to **`STORY_KEY`**) **only** for planned tests that have **no** matching linked Test.
+4. Do **not** assume an empty Jira side when re-running the pipeline; always **read linked Tests first**, then **update or add**.
+
 ## Cursor Agent CLI (headless)
 
-- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`** so MCP is not blocked by missing UI approval). **Do not** add scripts/docs that run the headless agent locally.
-
-## IDE vs CI
-
-- **Cursor IDE:** rules, **`.cursor/skills/`**, **`.cursor/mcp.json`** from **`.cursor/mcp.template.json`** via **`npm run render-mcp`** (**`scripts/render-mcp-config.js`**). Default MCP is **[sooperset/mcp-atlassian](https://github.com/sooperset/mcp-atlassian)** (**`ghcr.io/sooperset/mcp-atlassian:latest`**; **`CONTAINER_CMD`** **`podman`** locally, **`docker`** in Actions). See **`docs/GITHUB_SECRETS.md`** / **`docs/JIRA_MCP_OPTIONS.md`**.
-- You may hand-edit **`generated/jira-tests/<STORY_KEY>/`**; headless generation is **CI-only**.
-- **GitHub Actions:** **never** ask blocking questions. Apply EPMRPP style via **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; derive tests per **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Style:** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**. MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
 
 ## Always use **STORY_KEY** — verify first
 
@@ -41,7 +59,7 @@ Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) o
 **Before** authoring tests or writing **`generated/jira-tests/<STORY_KEY>/tests.json`**, use **Jira MCP** to call **`jira_getIssue(STORY_KEY)`** (or equivalent) and load at least Jira **`summary`**, **`description`**, **`issuetype`**, **`parent`**, and AC/DoD-style fields if available.
 
 - **Gate passes** when: the MCP call **succeeds**; the Jira issue **`summary`** (the **issue title** in Jira—**not** the **`tests[].summary`** field you write in **`tests.json`**) is a **non-empty** string; **`description`** is **present** in the response (value may be null, empty, or empty ADF).
-- **Only after the gate passes:** derive tests, write **`tests.json`**, create Jira Tests, or apply **Empty story** (below) if description + AC are genuinely empty.
+- **Only after the gate passes:** derive tests, write **`tests.json`**, sync Jira Tests (see **Sync with existing Jira Tests**), or apply **Empty story** (below) if description + AC are genuinely empty.
 
 **Failed gate (MCP error, missing tool, auth/network failure, missing/empty Jira `summary`):** **CI must fail.** **Do not** write **`tests.json`** or **`meta.json`**. **`scripts/verify-mcp-jira.js`** exits non-zero when **`tests.json`** is missing under **`generated/jira-tests/<STORY_KEY>/`**, so GitHub Actions shows the job **failed** (red). **Never** use **`tests: []`** + empty **`meta.json`** to simulate success.
 
@@ -83,7 +101,7 @@ Then: **`tests: []`**, **`meta.json`** with **`"jiraPublish": "mcp"`**, **`"mcpC
 
 ## `meta.json`
 
-After MCP creates Tests **or** when **`tests`** is empty:
+After MCP **creates and/or updates** Tests **or** when **`tests`** is empty:
 
 ```json
 {
@@ -92,13 +110,13 @@ After MCP creates Tests **or** when **`tests`** is empty:
 }
 ```
 
-**`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). **`scripts/verify-mcp-jira.js`** enforces this in CI.
+**`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). Each entry is the Jira **Test issue key** for that **`tests[]`** row after sync—**updated** existing issues and **newly created** issues both count (the name **`mcpCreatedKeys`** is historical). **`scripts/verify-mcp-jira.js`** enforces length and valid keys in CI.
 
 ## Jira MCP (CI)
 
 - On the runner: **`docker pull`** **`ghcr.io/sooperset/mcp-atlassian:latest`**, **`node scripts/render-mcp-config.js`**, copy **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** so the Cursor CLI can load MCP (workflow **Generate MCP config from template**).
 - Prefer the **same Jira project** as the story unless requirements say otherwise.
-- **Reads** for test design: **`jira_getIssue(STORY_KEY)`** only (plus searches scoped to that story). **Writes:** MCP only; if linking is unsupported, use your team’s MCP-side approach.
+- **Reads** for test design: **`jira_getIssue(STORY_KEY)`** for requirements; **plus** discovery of **linked Test** issues on that story (see **Sync with existing Jira Tests**) so reruns do not duplicate Tests. **Writes:** MCP only (**`jira_update_issue`** and **`jira_create_issue`** as appropriate); if linking is unsupported, use your team’s MCP-side approach.
 
 ## Safety
 

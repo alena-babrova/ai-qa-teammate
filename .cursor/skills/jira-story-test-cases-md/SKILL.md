@@ -18,7 +18,7 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 
 | Deliverable | Mapping |
 |-------------|---------|
-| **Jira Test issue** | **Test Steps** custom field ← one string: *Preconditions* block + *Steps* block (labels and `#` lines as in the format rule). **Expected result** field ← *Expected results* block. **Summary** ← EPMRPP title line only (**no** **`STORY_KEY`** in the title; link covers traceability — **`jira-test-issues.mdc`**). |
+| **Jira Test issue** | **Test Steps** (`customfield_19206`) + **Expected result** (`customfield_19207`) + **Test Library** (`customfield_24000`) + **Folder** (`customfield_24001`) — folder must be **`AI Generated / <STORY_KEY>`** under EPMRPP, not project root only (**`jira-test-issues.mdc`**). Steps string: *Preconditions* + *Steps* (labels; **`1.`…`N.`** or **`# `** per **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**). **Summary** ← EPMRPP title only (**no** **`STORY_KEY`** in title). |
 | **`tests.json` (`tests[]`)** | One object per logical test. **`testSteps`** = same combined string as Jira Test Steps above. **`expectedResult`** = *Expected results* string. **`summary`** = Jira Test title. **`description`** = optional Markdown. |
 | **Markdown file** | One **`## <title>`** per test (**no** **`STORY_KEY`** in each **`##`** title); under each, *Preconditions* / *Steps* / *Expected results* blocks matching the format rule. Top link: **`https://<your-jira>/browse/<STORY_KEY>`**. Filename: **`<STORY_KEY>-test-cases.md`** unless the user specifies otherwise. |
 
@@ -54,7 +54,7 @@ If Jira tools are **unavailable** or the fetch **errors**, **do not** use this p
 
 ## GitHub Actions (this repo)
 
-Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. Follow **`prompts/ci-generate-tests.md`** (from **`scripts/build-ci-prompt.js`**) and **`.cursor/rules/jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
+Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. Follow **`prompts/ci-generate-tests.md`** (from **`scripts/build-ci-prompt.js`**) and **`.cursor/rules/jira-test-issues.mdc`**. On reruns, **fetch linked Tests** for **`STORY_KEY`** first; **update** matching issues, **create** only new ones—see **Sync with existing Jira Tests** in **`jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
 
 ## Checklist
 
@@ -63,3 +63,4 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.
+- [ ] If the story already has linked Tests: **no duplicates**—**update** by matching **summary**, **create** only gaps (**`jira-test-issues.mdc`**).
