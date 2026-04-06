@@ -69,6 +69,9 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: node scripts/jira-pipeline-start.js
 
+      - name: Verify Figma API access
+        run: set -euo pipefail && node scripts/verify-figma-access.js
+
       - name: Generate MCP config from template
         env:
           CONTAINER_CMD: docker
