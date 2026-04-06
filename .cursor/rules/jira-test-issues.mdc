@@ -13,6 +13,7 @@ Edit the table for your instance.
 |------|--------|
 | **Project key** | `EPMRPP` |
 | **Issue type** | `Test` |
+| **Priority** | `Major` |
 | **Label** (mark AI-generated Tests) | `ai-generated` |
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
@@ -32,7 +33,7 @@ Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_2
 
 On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), and **`customfield_24001`** (Folder) using the **same value types** Jira returns for a reference Test already filed in the **target** folder (**preferred**). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or path strings. Exact format for the nested path (slash-separated string vs id) is instance-specific—**verify** with **`jira_get_issue`** on any Test already under **`EPMRPP / AI Generated / <some story key>`**.
 
-Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
+Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label and **`priority: Major`** when your Jira setup allows it.
 
 **Create and link** Test issues **only via Jira MCP**. No REST publish path in this pipeline.
 
