@@ -34,7 +34,16 @@ On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivale
 
 Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label when your Jira setup allows it.
 
-**Create and link** Test issues **only via Jira MCP**. **Link** each Test to the **story** (**`STORY_KEY`**). No REST publish path in this pipeline.
+**Create and link** Test issues **only via Jira MCP**. No REST publish path in this pipeline.
+
+### Linking Tests to the Story (required)
+
+After creating or updating each Test issue, perform **both** of the following:
+
+1. **Issue link — relation type `is tested by`:** Call **`jira_create_issue_link`** (or equivalent) to link the Test to **`STORY_KEY`** using link type **`is tested by`** (outward direction: Story *is tested by* Test). This makes the Test visible in the story's "is tested by" link section.
+2. **Requirement field:** Set the Jira **Requirement** field on the Test to **`STORY_KEY`** (the story issue key). The field id may vary by instance—verify with **`jira_get_issue`** on a reference Test that already has a Requirement set (`fields=*all`); look for a field whose value is an issue-picker object pointing to a story. Pass the same value shape when calling **`jira_create_issue`** / **`jira_update_issue`**.
+
+Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, record the gap in a comment on **`STORY_KEY`** and continue—do **not** silently skip.
 
 ### Sync with existing Jira Tests (no duplicates)
 
@@ -42,7 +51,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 1. **After** the **Pre-generation MCP gate** passes, **before** bulk **`jira_create_issue`**, discover Tests already **linked** to **`STORY_KEY`**: e.g. **`jira_get_issue(STORY_KEY)`** with **`issuelinks`** (follow link type **Tests** / **tested by** / **tests** per your instance), and/or **`jira_search`** / JQL your MCP supports to list **Test** issues tied to that story.
 2. **Do not** create a second Test for the same logical case. Match existing issues to planned **`tests[]`** rows by **Jira Test Summary** ↔ **`tests[].summary`** (normalize for comparison: trim, case-insensitive). When a match exists, use **`jira_update_issue`** to refresh **summary**, **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`**, **`labels`**, and any other fields you maintain—**do not** **`jira_create_issue`** again for that row.
-3. Use **`jira_create_issue`** (and link to **`STORY_KEY`**) **only** for planned tests that have **no** matching linked Test.
+3. Use **`jira_create_issue`** **only** for planned tests that have **no** matching linked Test; after creation apply both linking steps from **Linking Tests to the Story** (relation type `is tested by` + Requirement field).
 4. Do **not** assume an empty Jira side when re-running the pipeline; always **read linked Tests first**, then **update or add**.
 
 ## Cursor Agent CLI (headless)
