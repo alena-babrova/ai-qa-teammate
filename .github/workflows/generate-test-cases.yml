@@ -99,6 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           docker pull ghcr.io/sooperset/mcp-atlassian:latest
+          docker pull docker.io/acuvity/mcp-server-figma:latest
           node scripts/render-mcp-config.js
           mkdir -p "${HOME}/.cursor"
           cp .cursor/mcp.json "${HOME}/.cursor/mcp.json"

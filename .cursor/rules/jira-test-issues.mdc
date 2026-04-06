@@ -89,7 +89,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 ### When Figma links appear
 
 - Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers.
-- Use tools from the **Figma MCP** server (**`Framelink_Figma_MCP`** in **`.cursor/mcp.json`** — **`figma-developer-mcp`** via **`npx`** in CI). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
+- Use tools from the **Figma MCP** server (**`acuvity-mcp-server-figma`** in **`.cursor/mcp.json`** — **`docker.io/acuvity/mcp-server-figma`** via **`${CONTAINER_CMD}`** in CI). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
 - **Minimize Figma API calls (Cursor / CI — reduces 429 rate limits):**
   - **Collect first:** Parse the story once; list **unique** file keys (and node ids if present). **Deduplicate** identical URLs.
   - **Prefer fewer, wider reads:** If a tool can return a **whole file** or **multiple nodes in one call**, use that instead of many small calls. **Do not** enumerate every frame or component “to be thorough.”
