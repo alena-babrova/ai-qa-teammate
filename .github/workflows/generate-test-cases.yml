@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       issue_key:
-        description: Jira issue key (e.g. PROJ-123)
+        description: Jira issue key (PROJ-123) or browse URL (…/browse/PROJ-123)
         required: true
         type: string
       cursor_model:
@@ -49,23 +49,21 @@ jobs:
       CURSOR_AGENT_MODEL: ${{ github.event.inputs.cursor_model || github.event.client_payload.cursor_model || vars.CURSOR_AGENT_MODEL || 'composer-2' }}
     steps:
       # --- Phase 1: verify configuration ---
-      - name: "1. Verify — issue key"
-        run: |
-          if [ -z "${ISSUE_KEY}" ]; then
-            echo "ISSUE_KEY is required (repository_dispatch client_payload.issue_key or workflow_dispatch input)."
-            exit 1
-          fi
-          if ! echo "${ISSUE_KEY}" | grep -qE '^[A-Z][A-Z0-9_]+-[0-9]+$'; then
-            echo "ISSUE_KEY must look like PROJ-123"
-            exit 1
-          fi
-          echo "ISSUE_KEY=${ISSUE_KEY}"
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: "1. Verify — issue key or Jira browse URL"
+        run: |
+          if [ -z "${ISSUE_KEY}" ]; then
+            echo "ISSUE_KEY is required (workflow input or repository_dispatch client_payload.issue_key)."
+            exit 1
+          fi
+          LINE="$(node scripts/normalize-issue-input.js)"
+          echo "${LINE}" >> "${GITHUB_ENV}"
+          echo "Normalized: ${LINE}"
 
       - name: "1. Verify — Jira variables and secrets"
         run: |

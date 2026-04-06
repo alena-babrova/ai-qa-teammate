@@ -8,7 +8,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 
 ## Starting a run
 
-- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (e.g. `PROJ-123`) and choose **Cursor Agent LLM** (default **`composer-2`**; other options are common Cursor CLI model ids—run **`agent models`** locally if one fails for your account).
+- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (`PROJ-123`) **or** paste the **browse URL** (`…/browse/PROJ-123`); then choose **Cursor Agent LLM** (default **`composer-2`**; run **`agent models`** locally if an id fails for your account).
 - **From Jira:** You can drive the same workflow with automation (see [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md)).
 
 ## Required GitHub secrets and variables
