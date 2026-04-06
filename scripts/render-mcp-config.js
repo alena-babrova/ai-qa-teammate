@@ -4,8 +4,8 @@
  * Default server: ghcr.io/sooperset/mcp-atlassian (see https://github.com/sooperset/mcp-atlassian).
  * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
  * JIRA_URL and CONFLUENCE_URL are hardcoded in mcp.template.json (not secrets).
- * Confluence credential vars (CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN,
- * CONFLUENCE_PERSONAL_TOKEN) are optional — default to empty string when unset.
+ * Confluence credential vars (CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN) are optional —
+ * default to empty string when unset.
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
@@ -38,10 +38,6 @@ function applyDefaults() {
     process.env.CONTAINER_CMD = "podman";
   }
 
-  if (!process.env.JIRA_USERNAME?.trim() && process.env.JIRA_USER_EMAIL?.trim()) {
-    process.env.JIRA_USERNAME = process.env.JIRA_USER_EMAIL;
-  }
-
   if (!process.env.JIRA_PERSONAL_TOKEN?.trim() && process.env.JIRA_API_TOKEN?.trim()) {
     process.env.JIRA_PERSONAL_TOKEN = process.env.JIRA_API_TOKEN;
   }
@@ -52,12 +48,8 @@ function applyDefaults() {
     process.env.CONFLUENCE_USERNAME = process.env.CONFLUENCE_USER_EMAIL;
   }
 
-  if (!process.env.CONFLUENCE_PERSONAL_TOKEN?.trim() && process.env.CONFLUENCE_API_TOKEN?.trim()) {
-    process.env.CONFLUENCE_PERSONAL_TOKEN = process.env.CONFLUENCE_API_TOKEN;
-  }
-
   // Default Confluence credential vars to empty string so missing secrets don't fail the render.
-  for (const key of ["CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "CONFLUENCE_PERSONAL_TOKEN"]) {
+  for (const key of ["CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"]) {
     if (!process.env[key]) process.env[key] = "";
   }
 }
@@ -75,7 +67,6 @@ function main() {
   const optionalVars = new Set([
     "CONFLUENCE_USERNAME",
     "CONFLUENCE_API_TOKEN",
-    "CONFLUENCE_PERSONAL_TOKEN",
   ]);
 
   text = text.replace(pattern, (_, name) => {

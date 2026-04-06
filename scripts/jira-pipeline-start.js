@@ -3,7 +3,7 @@
  * CI: verify Jira REST read/write for the workflow target issue, then post a start comment.
  * Read: GET issue/{ISSUE_KEY}. Write: POST comment on the same issue.
  *
- * Env: ISSUE_KEY, JIRA_BASE_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN
+ * Env: ISSUE_KEY, JIRA_BASE_URL, JIRA_USERNAME, JIRA_API_TOKEN
  * Optional: GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID (link in comment)
  */
 
@@ -12,7 +12,7 @@ import { createJiraClient } from "./jira-client.js";
 async function main() {
   const issueKey = process.env.ISSUE_KEY?.trim();
   const baseUrl = process.env.JIRA_BASE_URL?.replace(/\/+$/, "");
-  const email = process.env.JIRA_USER_EMAIL;
+  const email = process.env.JIRA_USERNAME;
   const apiToken = process.env.JIRA_API_TOKEN;
 
   if (!issueKey) {
@@ -21,7 +21,7 @@ async function main() {
   }
   if (!baseUrl || !email || !apiToken) {
     console.error(
-      "jira-pipeline-start: set JIRA_BASE_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN",
+      "jira-pipeline-start: set JIRA_BASE_URL, JIRA_USERNAME, JIRA_API_TOKEN",
     );
     process.exit(1);
   }

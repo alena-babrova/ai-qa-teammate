@@ -20,7 +20,7 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 | Secret | Required | Purpose (summary) |
 |--------|----------|-------------------|
 | `CURSOR_API_KEY` | Yes | Cursor Agent in Actions |
-| `JIRA_USER_EMAIL` | Yes | Jira account identifier for automation |
+| `JIRA_USERNAME` | Yes | Jira account identifier for automation (email or username) |
 | `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
