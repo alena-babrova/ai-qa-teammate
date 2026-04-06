@@ -65,3 +65,4 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.
 - [ ] If the story already has linked Tests: **no duplicates**—**update** by matching **summary**, **create** only gaps (**`jira-test-issues.mdc`**).
+- [ ] After successful Jira sync: story **comment** on **`STORY_KEY`** = **summary + Test key/title list only**—**no** gaps or limitations (**`jira-test-issues.mdc`** → **Story comment after successful test generation**).

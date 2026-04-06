@@ -41,16 +41,16 @@ Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) o
 
 After creating or updating each Test issue, perform **both** of the following:
 
-1. **Issue link — relation type `is tested by`:** Call **`jira_create_issue_link`** (or equivalent) to link the Test to **`STORY_KEY`** using link type **`is tested by`** (outward direction: Story *is tested by* Test). This makes the Test visible in the story's "is tested by" link section.
+1. **Issue link — relation `is tested by` (Story → Test):** The link must read as **Jira Story (`STORY_KEY`) → `is tested by` → Test ticket** (the Test issue is what tests the story; on the Story issue, the link section shows **is tested by** pointing to each Test). Call **`jira_create_issue_link`** (or equivalent) with link type **`is tested by`** so **`STORY_KEY`** is the **source** side of that relationship and the **Test** issue key is the **target**—match your Jira instance’s inward/outward issue parameters for that link type (verify with **`jira_get_issue`** on a manually linked example if the API shape is unclear).
 2. **Requirement field:** Set the Jira **Requirement** field on the Test to **`STORY_KEY`** (the story issue key). The field id may vary by instance—verify with **`jira_get_issue`** on a reference Test that already has a Requirement set (`fields=*all`); look for a field whose value is an issue-picker object pointing to a story. Pass the same value shape when calling **`jira_create_issue`** / **`jira_update_issue`**.
 
-Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, record the gap in a comment on **`STORY_KEY`** and continue—do **not** silently skip.
+Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, try alternatives your MCP exposes; continue best-effort. **Do not** describe linking/Requirement/MCP limitations in the **completion comment** on **`STORY_KEY`** after tests are synced (**Story comment after successful test generation**).
 
 ### Sync with existing Jira Tests (no duplicates)
 
 Whenever test generation runs against a story that may already have **Test** issues.
 
-1. **After** the **Pre-generation MCP gate** passes, **before** bulk **`jira_create_issue`**, discover Tests already **linked** to **`STORY_KEY`**: e.g. **`jira_get_issue(STORY_KEY)`** with **`issuelinks`** (follow link type **Tests** / **tested by** / **tests** per your instance), and/or **`jira_search`** / JQL your MCP supports to list **Test** issues tied to that story.
+1. **After** the **Pre-generation MCP gate** passes, **before** bulk **`jira_create_issue`**, discover Tests already **linked** to **`STORY_KEY`**: e.g. **`jira_get_issue(STORY_KEY)`** with **`issuelinks`** (links where the story is **is tested by** the Test, or equivalent names per instance: **Tests** / **is tested by** / **tested by** / **tests**), and/or **`jira_search`** / JQL your MCP supports to list **Test** issues tied to that story.
 2. **Do not** create a second Test for the same logical case. Match existing issues to planned **`tests[]`** rows by **Jira Test Summary** ↔ **`tests[].summary`** (normalize for comparison: trim, case-insensitive). When a match exists, use **`jira_update_issue`** to refresh **summary**, **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`**, **`labels`**, and any other fields you maintain—**do not** **`jira_create_issue`** again for that row.
 3. Use **`jira_create_issue`** **only** for planned tests that have **no** matching linked Test; after creation apply both linking steps from **Linking Tests to the Story** (relation type `is tested by` + Requirement field).
 4. Do **not** assume an empty Jira side when re-running the pipeline; always **read linked Tests first**, then **update or add**.
@@ -96,7 +96,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ### If links exist but MCP read fails
 
-- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text; optionally add a short comment on **`STORY_KEY`** that linked Confluence/Figma content could not be retrieved. **Never** put tokens or secrets in **`generated/`** or repo files.
+- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text. **Do not** mention Confluence/Figma read failures in the **completion comment** on **`STORY_KEY`** after tests are generated (**Story comment after successful test generation**). **Never** put tokens or secrets in **`generated/`** or repo files.
 
 ## Jira fetch required (not the same as empty story)
 
@@ -146,6 +146,17 @@ After MCP **creates and/or updates** Tests **or** when **`tests`** is empty:
 ```
 
 **`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). Each entry is the Jira **Test issue key** for that **`tests[]`** row after sync—**updated** existing issues and **newly created** issues both count (the name **`mcpCreatedKeys`** is historical). **`scripts/verify-mcp-jira.js`** enforces length and valid keys in CI.
+
+## Story comment after successful test generation
+
+After **`tests.json`** and **`meta.json`** are written and Jira **Test** issues are synced for **`STORY_KEY`**, add **one** Jira **comment** on **`STORY_KEY`** (via Jira MCP, e.g. add comment on issue), unless your team already posts an equivalent summary elsewhere.
+
+**Include only:**
+
+- A **short summary** line (e.g. how many Tests were created or updated, reference to **AI-generated** / **Generate Test Cases** run if helpful).
+- A **list** of the **Test** work items: each line **Jira issue key** + **Test Summary** title (or markdown links `KEY — title`). Match **`mcpCreatedKeys`** / **`tests[].summary`**.
+
+**Do not** include in that comment: **gaps**, **limitations**, **disclaimers**, partial failures, MCP/tool **could not**, missing coverage, Confluence/Figma **could not be retrieved**, linking/Requirement **issues**, “manual follow-up”, or any negative or hedging language. Keep the comment factual and positive—summary + list only.
 
 ## MCP servers (CI)
 
