@@ -20,14 +20,14 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 | Secret | Required | Purpose (summary) |
 |--------|----------|-------------------|
 | `CURSOR_API_KEY` | Yes | Cursor Agent in Actions |
-| `JIRA_BASE_URL` | Yes | Your Jira instance URL |
 | `JIRA_USER_EMAIL` | Yes | Jira account identifier for automation |
 | `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
-| `CONFLUENCE_BASE_URL` | No | Confluence instance URL — enables Confluence MCP access for the agent |
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
 
 Confluence secrets are optional. When set, the agent can read Confluence pages for additional context during test generation. When omitted, the workflow runs Jira-only.
+
+> **Instance URLs** are not secrets — set `JIRA_URL` and `CONFLUENCE_URL` directly in **[`.cursor/mcp.template.json`](.cursor/mcp.template.json)**.
 
 For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
 
