@@ -4,7 +4,7 @@ Turns a **Jira story or task** (the parent issue) into **Jira Test issues** with
 
 ## How it runs (CI)
 
-The **Generate Test Cases** workflow in this repository runs in **GitHub Actions**—on demand or when another system triggers it. It uses the Cursor agent with this repo’s rules and prompts, then validates the outcome before the job finishes.
+The **Generate Test Cases** workflow runs in **GitHub Actions** in two jobs: **1. Verify configuration** (issue key, Jira, Figma, MCP render) and **2. Generate tests** (Cursor Agent + `tests.json` verification). The second job runs only if the first succeeds.
 
 ## Starting a run
 

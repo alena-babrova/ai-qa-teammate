@@ -1,5 +1,9 @@
 # Cursor Agent CLI (cursor-agent) runs ONLY in this GitHub Actions workflow.
 # Locally, use Cursor IDE with .cursor/rules and .cursor/mcp.json — do not run headless agent on dev machines.
+#
+# Stages:
+#   1. verify-config — issue key, secrets/variables, Jira, Figma, MCP template render (no agent).
+#   2. generate-tests — MCP render again, resolve STORY_KEY, Cursor Agent, verify tests.json (runs only if stage 1 passes).
 
 name: Generate Test Cases
 
@@ -18,9 +22,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  generate-and-verify:
+  verify-config:
+    name: "1. Verify configuration"
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     env:
       ISSUE_KEY: ${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
       # Instance URLs: repository Variables only (not Secrets)—see docs/GITHUB_SECRETS.md
@@ -62,6 +67,13 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Cursor API key
+        run: |
+          if [ -z "${CURSOR_API_KEY}" ]; then
+            echo "CURSOR_API_KEY secret is not set."
+            exit 1
+          fi
+
       - name: Jira read/write check and pipeline start comment
         env:
           GITHUB_SERVER_URL: ${{ github.server_url }}
@@ -69,9 +81,58 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: node scripts/jira-pipeline-start.js
 
+      # When FIGMA_API_KEY is set, invalid/revoked tokens exit 1 and fail the job — no continue-on-error.
       - name: Verify Figma API access
         run: set -euo pipefail && node scripts/verify-figma-access.js
 
+      - name: Generate MCP config from template
+        env:
+          CONTAINER_CMD: docker
+        run: |
+          set -euo pipefail
+          docker pull ghcr.io/sooperset/mcp-atlassian:latest
+          docker pull docker.io/acuvity/mcp-server-figma:latest
+          node scripts/render-mcp-config.js
+          mkdir -p "${HOME}/.cursor"
+          cp .cursor/mcp.json "${HOME}/.cursor/mcp.json"
+          if grep -q '\${' "${HOME}/.cursor/mcp.json"; then
+            echo "::error::MCP config still contains unresolved \${...} placeholders"
+            exit 1
+          fi
+          echo "MCP config written to .cursor/mcp.json and ${HOME}/.cursor/mcp.json (contents not logged)."
+
+      - name: Notify Jira on failure
+        if: failure()
+        env:
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/notify-jira-failure.js
+
+  generate-tests:
+    name: "2. Generate tests"
+    needs: verify-config
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ISSUE_KEY: ${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
+      # Instance URLs: repository Variables only (not Secrets)—see docs/GITHUB_SECRETS.md
+      JIRA_URL: ${{ vars.JIRA_URL }}
+      CONFLUENCE_URL: ${{ vars.CONFLUENCE_URL }}
+      JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      CONFLUENCE_USER_EMAIL: ${{ secrets.CONFLUENCE_USER_EMAIL }}
+      CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
+      FIGMA_API_KEY: ${{ secrets.FIGMA_API_KEY }}
+      CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Fresh runner: re-render MCP (do not pass mcp.json between jobs — avoids artifacting secrets).
       - name: Generate MCP config from template
         env:
           CONTAINER_CMD: docker
@@ -139,10 +200,6 @@ jobs:
           STORY_KEY: ${{ env.STORY_KEY }}
           ISSUE_KEY: ${{ env.ISSUE_KEY }}
         run: |
-          if [ -z "${CURSOR_API_KEY}" ]; then
-            echo "CURSOR_API_KEY secret is not set."
-            exit 1
-          fi
           if command -v cursor-agent >/dev/null 2>&1; then
             AGENT_BIN=cursor-agent
           elif command -v agent >/dev/null 2>&1; then
@@ -154,15 +211,11 @@ jobs:
           echo "STORY_KEY=${STORY_KEY} (output dir) ISSUE_KEY=${ISSUE_KEY} (workflow target)"
           MODEL="$(node scripts/resolve-cursor-agent-model.js)"
           PROMPT="$(node scripts/build-ci-prompt.js)"
-          # Visible in the Actions UI (annotations) right before CLI requests start.
           echo "::notice title=Cursor Agent CLI::Starting headless run with model: ${MODEL}"
           echo "Cursor Agent CLI: streaming run log (JSON lines; partial text deltas when the CLI emits them)."
-          # Non-interactive CI: --trust = workspace; --approve-mcps + --force = no UI to approve MCP servers.
-          # stream-json + stream-partial-output flushes progress to the job log instead of buffering until exit.
           "${AGENT_BIN}" --trust --approve-mcps --force --model "${MODEL}" -p "${PROMPT}" --print \
             --output-format stream-json --stream-partial-output
 
-      # Missing tests.json here usually means Jira MCP read failed, gate failed, or the agent errored before writing output.
       - name: Verify MCP created all Test issues in Jira
         run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
 
