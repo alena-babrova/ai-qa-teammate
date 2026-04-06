@@ -15,14 +15,19 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 
 **Where to set them:** open the repository on GitHub → **Settings** → **Secrets and variables** → **Actions** → **Secrets** → **New repository secret**. (Organization secrets are also supported if your org allows this repo to use them.)
 
-**What to define:** create these four secrets:
+**What to define:** create these secrets:
 
-| Secret | Purpose (summary) |
-|--------|-------------------|
-| `CURSOR_API_KEY` | Cursor Agent in Actions |
-| `JIRA_BASE_URL` | Your Jira instance URL |
-| `JIRA_USER_EMAIL` | Jira account identifier for automation |
-| `JIRA_API_TOKEN` | Jira token for the agent and related steps |
+| Secret | Required | Purpose (summary) |
+|--------|----------|-------------------|
+| `CURSOR_API_KEY` | Yes | Cursor Agent in Actions |
+| `JIRA_BASE_URL` | Yes | Your Jira instance URL |
+| `JIRA_USER_EMAIL` | Yes | Jira account identifier for automation |
+| `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
+| `CONFLUENCE_BASE_URL` | No | Confluence instance URL — enables Confluence MCP access for the agent |
+| `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
+| `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
+
+Confluence secrets are optional. When set, the agent can read Confluence pages for additional context during test generation. When omitted, the workflow runs Jira-only.
 
 For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
 
