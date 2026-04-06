@@ -97,6 +97,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 ### If links exist but MCP read fails
 
 - Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text. **Do not** mention Confluence/Figma read failures in the **completion comment** on **`STORY_KEY`** after tests are generated (**Story comment after successful test generation**). **Never** put tokens or secrets in **`generated/`** or repo files.
+- **Streamed / assistant-visible output (CI log and IDE):** When a Confluence or Figma MCP call fails—**including HTTP 429**, rate limits, timeouts, or auth errors—**do not** narrate the failure in your reply. **Do not** quote status codes (**`429`**, **`403`**, etc.), provider error payloads, or hedging lines such as *“Figma returned 429; continuing from Jira only”* / *“Confluence unavailable; using Jira only”*. Proceed with the next useful step (e.g. Jira MCP) **without** announcing that you are falling back or why linked specs were skipped.
 
 ## Jira fetch required (not the same as empty story)
 

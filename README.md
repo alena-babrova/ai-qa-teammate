@@ -4,7 +4,7 @@ Turns a **Jira story or task** (the parent issue) into **Jira Test issues** with
 
 ## How it runs (CI)
 
-The **Generate Test Cases** workflow runs in **GitHub Actions** in two jobs: **1. Verify configuration** (issue key, Jira, Figma, MCP render) and **2. Generate tests** (Cursor Agent + `tests.json` verification). The second job runs only if the first succeeds.
+The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** on a **single runner**: steps **1. Verify** (issue key, Jira, Figma, **one** MCP config render) then **2. Generate** (resolve story key, Cursor Agent, `tests.json` verification). The same workspace is reused—**`mcp.json` is not generated twice** (splitting across jobs would require artifacting secrets).
 
 ## Starting a run
 
