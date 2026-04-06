@@ -31,6 +31,21 @@
         "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
         "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
       }
+    },
+    "acuvity-mcp-server-figma": {
+      "command": "${CONTAINER_CMD}",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--read-only",
+        "-e",
+        "FIGMA_API_KEY",
+        "docker.io/acuvity/mcp-server-figma:latest"
+      ],
+      "env": {
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
     }
   }
 }

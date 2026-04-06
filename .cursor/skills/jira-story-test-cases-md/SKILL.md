@@ -44,7 +44,7 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 3. If Sub-task (or equivalent) and **`parent.key`** exists → **`STORY_KEY = parent.key`**. Original key is **trigger only**; do **not** use Sub-task body for scenarios.
 4. Else **`STORY_KEY`** = that issue’s key.
 5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author **`tests[]`** or Markdown cases until this passes. On failure: **do not** write **`tests.json`** / **`meta.json`** in CI (job must fail at verify)—see **`.cursor/rules/jira-test-issues.mdc`** (**Pre-generation MCP gate**).
-6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error).
+6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence** or **Figma** URLs, use the **Atlassian** (Confluence) and **Figma** MCP servers to **read** linked pages or designs **before** authoring tests—see **`.cursor/rules/jira-test-issues.mdc`** → **Story-linked Confluence and Figma**.
 
 ## Empty story
 
@@ -60,6 +60,7 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
+- [ ] Confluence/Figma MCP used to fetch **story-linked** URLs when present (**`jira-test-issues.mdc`**); skipped when no links.
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.

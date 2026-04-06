@@ -8,11 +8,12 @@ Add these under **Settings → Secrets and variables → Actions → Secrets** f
 | `JIRA_USERNAME` | Yes | Account email or username for Jira. Passed as **`JIRA_USERNAME`** to **[mcp-atlassian](https://github.com/sooperset/mcp-atlassian)** and to Jira REST scripts (**`jira-pipeline-start.js`**, **`notify-jira-failure.js`**, etc.). |
 | `JIRA_API_TOKEN` | Yes | Data Center **personal access token** (PAT). Rendered into **`JIRA_API_TOKEN`** and **`JIRA_PERSONAL_TOKEN`** for the MCP container. Same value is used as the REST password with **`JIRA_USERNAME`** for the failure comment. |
 | `CONFLUENCE_USER_EMAIL` | No | Account email/username for Confluence. Rendered into **`CONFLUENCE_USERNAME`** for the MCP container. |
-| `CONFLUENCE_API_TOKEN` | No | Personal access token for Confluence. Rendered into **`CONFLUENCE_API_TOKEN`** and **`CONFLUENCE_PERSONAL_TOKEN`** for the MCP container. |
+| `CONFLUENCE_API_TOKEN` | No | Personal access token for Confluence. Rendered into **`CONFLUENCE_API_TOKEN`** for the MCP container. |
+| `FIGMA_API_KEY` | No | Figma API token for **[acuvity/mcp-server-figma](https://hub.docker.com/r/acuvity/mcp-server-figma)** (`FIGMA_API_KEY` in rendered **`mcp.json`**). Optional — leave unset if you do not use Figma in test generation. |
 
 > **Instance URLs** (`JIRA_URL`, `CONFLUENCE_URL`) are hardcoded directly in **[`.cursor/mcp.template.json`](../.cursor/mcp.template.json)** — edit that file to set your instance addresses. They are not secrets.
 
-Locally, install **Docker** or **Podman**, set **`JIRA_USERNAME`**, **`JIRA_API_TOKEN`** (and optionally the `CONFLUENCE_*` vars), then run **`npm run render-mcp`**. Use **`CONTAINER_CMD=docker`** if you do not use Podman.
+Locally, install **Docker** or **Podman**, set **`JIRA_USERNAME`**, **`JIRA_API_TOKEN`** (and optionally `CONFLUENCE_*`, **`FIGMA_API_KEY`**), then run **`npm run render-mcp`**. Use **`CONTAINER_CMD=docker`** if you do not use Podman.
 
 ## Actions variables (optional)
 

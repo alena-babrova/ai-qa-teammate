@@ -73,6 +73,31 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 **Failed gate (MCP error, missing tool, auth/network failure, missing/empty Jira `summary`):** **CI must fail.** **Do not** write **`tests.json`** or **`meta.json`**. **`scripts/verify-mcp-jira.js`** exits non-zero when **`tests.json`** is missing under **`generated/jira-tests/<STORY_KEY>/`**, so GitHub Actions shows the job **failed** (red). **Never** use **`tests: []`** + empty **`meta.json`** to simulate success.
 
+## Story-linked Confluence and Figma (MCP reads)
+
+**After** the **Pre-generation MCP gate** passes and you have **`jira_getIssue(STORY_KEY)`** (or equivalent), **before** you finalize test coverage, check whether the story references **Confluence** or **Figma** by URL.
+
+**Where to look:** Jira **`description`** (plain text or extract link targets from ADF if your tools support it), AC/DoD-style custom fields, and—if you fetch them via Jira MCP—**comments** on **`STORY_KEY`**.
+
+### When Confluence links appear
+
+- Typical signals: hostnames or paths for your Confluence instance (e.g. **`/wiki/`**, **`confluence.`**, org knowledge-base hosts), page links embedded in the description or AC.
+- Use **Confluence** read/search tools from the **Atlassian MCP** server (**`atlassian`** in **`.cursor/mcp.json`**). Exact tool names depend on the server build—use whatever Confluence tools the session exposes (get page, search, etc.).
+- **Read-only:** use MCP to pull content needed to understand acceptance criteria, flows, or copy **referenced by the link**. **Do not** invent details that exist only on the linked page without fetching it when the link is present and MCP is available.
+
+### When Figma links appear
+
+- Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers.
+- Use tools from the **Figma MCP** server (**`acuvity-mcp-server-figma`** in **`.cursor/mcp.json`**). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
+
+### If there are no such links
+
+- **Do not** call Confluence or Figma MCP for exploration unrelated to URLs found on the story.
+
+### If links exist but MCP read fails
+
+- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text; optionally add a short comment on **`STORY_KEY`** that linked Confluence/Figma content could not be retrieved. **Never** put tokens or secrets in **`generated/`** or repo files.
+
 ## Jira fetch required (not the same as empty story)
 
 This section aligns with the **Pre-generation MCP gate** above.
@@ -122,11 +147,12 @@ After MCP **creates and/or updates** Tests **or** when **`tests`** is empty:
 
 **`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). Each entry is the Jira **Test issue key** for that **`tests[]`** row after sync—**updated** existing issues and **newly created** issues both count (the name **`mcpCreatedKeys`** is historical). **`scripts/verify-mcp-jira.js`** enforces length and valid keys in CI.
 
-## Jira MCP (CI)
+## MCP servers (CI)
 
-- On the runner: **`docker pull`** **`ghcr.io/sooperset/mcp-atlassian:latest`**, **`node scripts/render-mcp-config.js`**, copy **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** so the Cursor CLI can load MCP (workflow **Generate MCP config from template**).
+- On the runner: pull the images declared in **`.cursor/mcp.template.json`**, run **`node scripts/render-mcp-config.js`**, copy **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** so the Cursor CLI loads **Atlassian** (Jira + optional Confluence) and **Figma** MCP (workflow **Generate MCP config from template**).
 - Prefer the **same Jira project** as the story unless requirements say otherwise.
-- **Reads** for test design: **`jira_getIssue(STORY_KEY)`** for requirements; **plus** discovery of **linked Test** issues on that story (see **Sync with existing Jira Tests**) so reruns do not duplicate Tests. **Writes:** MCP only (**`jira_update_issue`** and **`jira_create_issue`** as appropriate); if linking is unsupported, use your team’s MCP-side approach.
+- **Reads** for test design: **`jira_getIssue(STORY_KEY)`** for requirements; **plus** **Confluence** / **Figma** MCP when the story contains links (see **Story-linked Confluence and Figma**); **plus** discovery of **linked Test** issues on that story (see **Sync with existing Jira Tests**) so reruns do not duplicate Tests.
+- **Writes to Jira (Test issues):** Jira MCP only (**`jira_update_issue`** and **`jira_create_issue`** as appropriate); if linking is unsupported, use your team’s MCP-side approach. **Do not** use Confluence or Figma MCP to mutate external systems during test generation—**read** linked specs only.
 
 ## Safety
 

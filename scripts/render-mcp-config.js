@@ -4,8 +4,8 @@
  * Default server: ghcr.io/sooperset/mcp-atlassian (see https://github.com/sooperset/mcp-atlassian).
  * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
  * JIRA_URL and CONFLUENCE_URL are hardcoded in mcp.template.json (not secrets).
- * Confluence credential vars (CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN) are optional —
- * default to empty string when unset.
+ * Confluence credential vars (CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN) and
+ * FIGMA_API_KEY (Figma MCP) are optional — default to empty string when unset.
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
@@ -48,8 +48,8 @@ function applyDefaults() {
     process.env.CONFLUENCE_USERNAME = process.env.CONFLUENCE_USER_EMAIL;
   }
 
-  // Default Confluence credential vars to empty string so missing secrets don't fail the render.
-  for (const key of ["CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"]) {
+  // Default optional credential vars to empty string so missing secrets don't fail the render.
+  for (const key of ["CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "FIGMA_API_KEY"]) {
     if (!process.env[key]) process.env[key] = "";
   }
 }
@@ -67,6 +67,7 @@ function main() {
   const optionalVars = new Set([
     "CONFLUENCE_USERNAME",
     "CONFLUENCE_API_TOKEN",
+    "FIGMA_API_KEY",
   ]);
 
   text = text.replace(pattern, (_, name) => {

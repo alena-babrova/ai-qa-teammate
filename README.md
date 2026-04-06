@@ -24,8 +24,9 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 | `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
+| `FIGMA_API_KEY` | No | Figma API token for the Figma MCP server |
 
-Confluence secrets are optional. When set, the agent can read Confluence pages for additional context during test generation. When omitted, the workflow runs Jira-only.
+`CONFLUENCE_*` and **`FIGMA_API_KEY`** are optional. When set, the agent can use Confluence and/or Figma for extra context during test generation.
 
 > **Instance URLs** are not secrets — set `JIRA_URL` and `CONFLUENCE_URL` directly in **[`.cursor/mcp.template.json`](.cursor/mcp.template.json)**.
 

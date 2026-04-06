@@ -27,6 +27,7 @@ jobs:
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
       CONFLUENCE_USER_EMAIL: ${{ secrets.CONFLUENCE_USER_EMAIL }}
       CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
+      FIGMA_API_KEY: ${{ secrets.FIGMA_API_KEY }}
       CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
     steps:
       - name: Validate issue key
@@ -67,6 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           docker pull ghcr.io/sooperset/mcp-atlassian:latest
+          docker pull docker.io/acuvity/mcp-server-figma:latest
           node scripts/render-mcp-config.js
           mkdir -p "${HOME}/.cursor"
           cp .cursor/mcp.json "${HOME}/.cursor/mcp.json"
