@@ -3,9 +3,10 @@
  * Reads .cursor/mcp.template.json and replaces ${ENV_NAME} with process.env[ENV_NAME].
  * Default server: ghcr.io/sooperset/mcp-atlassian (see https://github.com/sooperset/mcp-atlassian).
  * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
- * JIRA_URL and CONFLUENCE_URL are hardcoded in mcp.template.json (not secrets).
- * Confluence credential vars (CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN) and
- * FIGMA_API_KEY (Figma MCP) are optional — default to empty string when unset.
+ * Normalizes **`JIRA_URL`** and, when set, **`CONFLUENCE_URL`** to **scheme + host** (from env or CI variables).
+ * **`JIRA_URL`** is required for a successful render. **`CONFLUENCE_URL`** is optional (empty when unset).
+ * Confluence credentials (**`CONFLUENCE_USERNAME`**, **`CONFLUENCE_API_TOKEN`**) and **`FIGMA_API_KEY`**
+ * are optional — default to empty string when unset.
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
@@ -38,6 +39,16 @@ function applyDefaults() {
     process.env.CONTAINER_CMD = "podman";
   }
 
+  if (process.env.JIRA_URL?.trim()) {
+    const u = deriveRootUrl(process.env.JIRA_URL);
+    if (u) process.env.JIRA_URL = u;
+  }
+
+  if (process.env.CONFLUENCE_URL?.trim()) {
+    const u = deriveRootUrl(process.env.CONFLUENCE_URL);
+    if (u) process.env.CONFLUENCE_URL = u;
+  }
+
   if (!process.env.JIRA_PERSONAL_TOKEN?.trim() && process.env.JIRA_API_TOKEN?.trim()) {
     process.env.JIRA_PERSONAL_TOKEN = process.env.JIRA_API_TOKEN;
   }
@@ -48,8 +59,8 @@ function applyDefaults() {
     process.env.CONFLUENCE_USERNAME = process.env.CONFLUENCE_USER_EMAIL;
   }
 
-  // Default optional credential vars to empty string so missing secrets don't fail the render.
-  for (const key of ["CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "FIGMA_API_KEY"]) {
+  // Default optional vars to empty string so missing secrets don't fail the render.
+  for (const key of ["CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "FIGMA_API_KEY"]) {
     if (!process.env[key]) process.env[key] = "";
   }
 }
@@ -65,6 +76,7 @@ function main() {
   let text = fs.readFileSync(templatePath, "utf8");
   const missing = new Set();
   const optionalVars = new Set([
+    "CONFLUENCE_URL",
     "CONFLUENCE_USERNAME",
     "CONFLUENCE_API_TOKEN",
     "FIGMA_API_KEY",

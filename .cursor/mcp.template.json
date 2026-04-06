@@ -23,10 +23,10 @@
         "ghcr.io/sooperset/mcp-atlassian:latest"
       ],
       "env": {
-        "CONFLUENCE_URL": "https://kb.epam.com",
+        "CONFLUENCE_URL": "${CONFLUENCE_URL}",
         "CONFLUENCE_USERNAME": "${CONFLUENCE_USERNAME}",
         "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}",
-        "JIRA_URL": "https://jiraeu.epam.com",
+        "JIRA_URL": "${JIRA_URL}",
         "JIRA_USERNAME": "${JIRA_USERNAME}",
         "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
         "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"

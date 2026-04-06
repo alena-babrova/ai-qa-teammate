@@ -11,11 +11,13 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 - **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (e.g. `PROJ-123`).
 - **From Jira:** You can drive the same workflow with automation (see [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md)).
 
-## Required GitHub secrets
+## Required GitHub secrets and variables
 
-**Where to set them:** open the repository on GitHub → **Settings** → **Secrets and variables** → **Actions** → **Secrets** → **New repository secret**. (Organization secrets are also supported if your org allows this repo to use them.)
+**Secrets:** **Settings** → **Secrets and variables** → **Actions** → **Secrets**. (Organization secrets are supported if your org allows this repo to use them.)
 
-**What to define:** create these secrets:
+**Variables** (not secrets): same page → **Variables** tab — set **`JIRA_URL`** (required) and optionally **`CONFLUENCE_URL`**. These instance URLs are **never** stored as Actions secrets; the workflow reads **`vars.JIRA_URL`** / **`vars.CONFLUENCE_URL`** only.
+
+**Secrets to create:**
 
 | Secret | Required | Purpose (summary) |
 |--------|----------|-------------------|
@@ -28,9 +30,9 @@ The **Generate Test Cases** workflow in this repository runs in **GitHub Actions
 
 `CONFLUENCE_*` and **`FIGMA_API_KEY`** are optional. When set, the agent can use Confluence and/or Figma for extra context during test generation.
 
-> **Instance URLs** are not secrets — set `JIRA_URL` and `CONFLUENCE_URL` directly in **[`.cursor/mcp.template.json`](.cursor/mcp.template.json)**.
+**Repository variables** (**Variables** tab, not **Secrets**): **`JIRA_URL`** (required for CI) and optional **`CONFLUENCE_URL`**. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**. Details: **`docs/GITHUB_SECRETS.md`**.
 
-For full detail on each secret, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
+For full detail on each secret and variable, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
 
 **Cursor Agent model in CI:** default is **[`.cursor/ci/agent.json`](.cursor/ci/agent.json)** (`model`). Optional GitHub Actions variable **`CURSOR_AGENT_MODEL`** overrides it without a commit. See **`docs/GITHUB_SECRETS.md`**.
 

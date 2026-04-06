@@ -3,7 +3,7 @@
  * Prints STORY_KEY=<key> for GITHUB_ENV.
  * If ISSUE_KEY is a Jira Sub-task (by issue type name), uses parent issue key; else ISSUE_KEY.
  *
- * Env: ISSUE_KEY, JIRA_BASE_URL, JIRA_USERNAME, JIRA_API_TOKEN
+ * Env: ISSUE_KEY, JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN
  */
 
 import { createJiraClient } from "./jira-client.js";
@@ -16,7 +16,7 @@ function isSubTaskType(name) {
 
 function main() {
   const issueKey = process.env.ISSUE_KEY?.trim() || process.argv[2]?.trim();
-  const baseUrl = process.env.JIRA_BASE_URL?.replace(/\/+$/, "");
+  const baseUrl = process.env.JIRA_URL?.replace(/\/+$/, "");
   const email = process.env.JIRA_USERNAME;
   const apiToken = process.env.JIRA_API_TOKEN;
 
@@ -25,7 +25,7 @@ function main() {
     process.exit(1);
   }
   if (!baseUrl || !email || !apiToken) {
-    console.error("Set JIRA_BASE_URL, JIRA_USERNAME, JIRA_API_TOKEN");
+    console.error("Set JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN");
     process.exit(1);
   }
 

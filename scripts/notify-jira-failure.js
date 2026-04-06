@@ -8,7 +8,7 @@ import { createJiraClient } from "./jira-client.js";
 
 async function main() {
   const parentKey = process.env.ISSUE_KEY?.trim();
-  const baseUrl = process.env.JIRA_BASE_URL?.replace(/\/+$/, "");
+  const baseUrl = process.env.JIRA_URL?.replace(/\/+$/, "");
   const email = process.env.JIRA_USERNAME;
   const apiToken = process.env.JIRA_API_TOKEN;
 
