@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * Reads .cursor/mcp.template.json and replaces ${ENV_NAME} with process.env[ENV_NAME].
- * Default server: ghcr.io/sooperset/mcp-atlassian (Jira-only; see https://github.com/sooperset/mcp-atlassian).
+ * Default server: ghcr.io/sooperset/mcp-atlassian (see https://github.com/sooperset/mcp-atlassian).
  * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
  * Derives JIRA_URL from JIRA_BASE_URL; maps repo secrets into upstream env names.
+ * Confluence vars (CONFLUENCE_URL, CONFLUENCE_USERNAME, CONFLUENCE_API_TOKEN,
+ * CONFLUENCE_PERSONAL_TOKEN) are optional — defaults to empty string when unset.
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
@@ -48,6 +50,26 @@ function applyDefaults() {
   if (!process.env.JIRA_PERSONAL_TOKEN?.trim() && process.env.JIRA_API_TOKEN?.trim()) {
     process.env.JIRA_PERSONAL_TOKEN = process.env.JIRA_API_TOKEN;
   }
+
+  // Confluence — optional; derive from *_BASE_URL / *_USER_EMAIL aliases if present,
+  // then fall back to empty string so the template renders without error.
+  if (!process.env.CONFLUENCE_URL?.trim() && process.env.CONFLUENCE_BASE_URL?.trim()) {
+    const u = deriveRootUrl(process.env.CONFLUENCE_BASE_URL);
+    if (u) process.env.CONFLUENCE_URL = u;
+  }
+
+  if (!process.env.CONFLUENCE_USERNAME?.trim() && process.env.CONFLUENCE_USER_EMAIL?.trim()) {
+    process.env.CONFLUENCE_USERNAME = process.env.CONFLUENCE_USER_EMAIL;
+  }
+
+  if (!process.env.CONFLUENCE_PERSONAL_TOKEN?.trim() && process.env.CONFLUENCE_API_TOKEN?.trim()) {
+    process.env.CONFLUENCE_PERSONAL_TOKEN = process.env.CONFLUENCE_API_TOKEN;
+  }
+
+  // Default all Confluence vars to empty string so missing secrets don't fail the render.
+  for (const key of ["CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "CONFLUENCE_PERSONAL_TOKEN"]) {
+    if (!process.env[key]) process.env[key] = "";
+  }
 }
 
 function main() {
@@ -60,14 +82,20 @@ function main() {
 
   let text = fs.readFileSync(templatePath, "utf8");
   const missing = new Set();
+  const optionalVars = new Set([
+    "CONFLUENCE_URL",
+    "CONFLUENCE_USERNAME",
+    "CONFLUENCE_API_TOKEN",
+    "CONFLUENCE_PERSONAL_TOKEN",
+  ]);
 
   text = text.replace(pattern, (_, name) => {
     const v = process.env[name];
-    if (v === undefined || v === "") {
+    if ((v === undefined || v === "") && !optionalVars.has(name)) {
       missing.add(name);
       return `\${${name}}`;
     }
-    return v;
+    return v ?? "";
   });
 
   if (missing.size > 0) {
