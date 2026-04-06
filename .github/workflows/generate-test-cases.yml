@@ -16,6 +16,18 @@ on:
         description: Jira issue key (e.g. PROJ-123)
         required: true
         type: string
+      cursor_model:
+        description: Cursor Agent LLM (must match an id your account supports — run agent models locally)
+        required: true
+        type: choice
+        default: composer-2
+        options:
+          - composer-2
+          - gpt-5
+          - claude-4-sonnet
+          - claude-4-opus
+          - o3
+          - gemini-2.5-pro
 
 concurrency:
   group: generate-test-cases-${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
@@ -125,6 +137,8 @@ jobs:
       CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
       FIGMA_API_KEY: ${{ secrets.FIGMA_API_KEY }}
       CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+      # Precedence: manual workflow input → repository_dispatch client_payload.cursor_model → repo variable → composer-2
+      CURSOR_AGENT_MODEL: ${{ github.event.inputs.cursor_model || github.event.client_payload.cursor_model || vars.CURSOR_AGENT_MODEL || 'composer-2' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -196,7 +210,6 @@ jobs:
       - name: Run Cursor Agent (headless)
         env:
           CI: "true"
-          CURSOR_AGENT_MODEL: ${{ vars.CURSOR_AGENT_MODEL }}
           STORY_KEY: ${{ env.STORY_KEY }}
           ISSUE_KEY: ${{ env.ISSUE_KEY }}
         run: |

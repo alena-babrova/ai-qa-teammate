@@ -8,7 +8,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** in two jobs: **1
 
 ## Starting a run
 
-- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (e.g. `PROJ-123`).
+- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (e.g. `PROJ-123`) and choose **Cursor Agent LLM** (default **`composer-2`**; other options are common Cursor CLI model ids—run **`agent models`** locally if one fails for your account).
 - **From Jira:** You can drive the same workflow with automation (see [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md)).
 
 ## Required GitHub secrets and variables
@@ -34,7 +34,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** in two jobs: **1
 
 For full detail on each secret and variable, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
 
-**Cursor Agent model in CI:** default is **[`.cursor/ci/agent.json`](.cursor/ci/agent.json)** (`model`). Optional GitHub Actions variable **`CURSOR_AGENT_MODEL`** overrides it without a commit. See **`docs/GITHUB_SECRETS.md`**.
+**Cursor Agent model in CI:** **Run workflow** includes a **model** dropdown (default **`composer-2`**). **`repository_dispatch`** / Jira automation can send **`client_payload.cursor_model`**; optional variable **`CURSOR_AGENT_MODEL`** applies when neither is set. See **`docs/GITHUB_SECRETS.md`**.
 
 ## Other setup
 

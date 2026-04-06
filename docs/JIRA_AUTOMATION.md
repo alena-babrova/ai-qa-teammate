@@ -20,10 +20,13 @@ When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases**
      {
        "event_type": "ai-test-generate",
        "client_payload": {
-         "issue_key": "{{issue.key}}"
+         "issue_key": "{{issue.key}}",
+         "cursor_model": "composer-2"
        }
      }
      ```
+
+     Optional **`cursor_model`**: Cursor Agent LLM id (same strings as the **Run workflow** dropdown, e.g. **`composer-2`**, **`gpt-5`**). Omit to use repository variable **`CURSOR_AGENT_MODEL`** or the workflow default **`composer-2`**.
      Use your automation’s syntax to inject the issue key (e.g. smart value for **Issue key**).
 
 3. **Event type** must match the workflow: **`ai-test-generate`** (see `.github/workflows/generate-test-cases.yml`). The workflow file defines **`repository_dispatch`** handling; the API **`event_type`** stays **`ai-test-generate`** so existing integrations keep working.
