@@ -6,7 +6,7 @@
  * Normalizes **`JIRA_URL`** and, when set, **`CONFLUENCE_URL`** to **scheme + host** (from env or CI variables).
  * **`JIRA_URL`** is required for a successful render. **`CONFLUENCE_URL`** is optional (empty when unset).
  * Confluence credentials (**`CONFLUENCE_USERNAME`**, **`CONFLUENCE_API_TOKEN`**) and **`FIGMA_API_KEY`**
- * are optional — default to empty string when unset.
+ * (Framelink **`figma-developer-mcp`** via **`npx`**) are optional — default to empty string when unset.
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
