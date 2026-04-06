@@ -53,7 +53,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
 
       - name: "1. Verify — issue key or Jira browse URL"
         run: |
@@ -119,39 +119,6 @@ jobs:
 
       - name: "2. Generate — prepare output directory"
         run: mkdir -p "generated/jira-tests/${STORY_KEY}"
-
-      - name: "2. Generate — log workspace layout (MCP check)"
-        env:
-          STORY_KEY: ${{ env.STORY_KEY }}
-        run: |
-          echo "::group::Repository root"
-          pwd
-          ls -la
-          echo "::endgroup::"
-          echo "::group::.cursor (filenames only—do not log mcp.json contents)"
-          ls -la .cursor
-          echo "::endgroup::"
-          echo "::group::prompts"
-          ls -la prompts
-          echo "::endgroup::"
-          echo "::group::generated/jira-tests/${STORY_KEY}"
-          ls -la "generated/jira-tests/${STORY_KEY}"
-          echo "::endgroup::"
-          echo "::group::MCP config"
-          if [ -f .cursor/mcp.json ]; then
-            echo "mcp.json: present ($(wc -c < .cursor/mcp.json | tr -d ' ') bytes; contents omitted—contains secrets)"
-          else
-            echo "::error::.cursor/mcp.json is missing after Generate MCP config"
-            exit 1
-          fi
-          echo "::endgroup::"
-          echo "::group::User MCP config (CLI)"
-          if [ -f "${HOME}/.cursor/mcp.json" ]; then
-            echo "~/.cursor/mcp.json: present ($(wc -c < "${HOME}/.cursor/mcp.json" | tr -d ' ') bytes; contents omitted)"
-          else
-            echo "::warning::~/.cursor/mcp.json missing after copy"
-          fi
-          echo "::endgroup::"
 
       - name: "2. Generate — run Cursor Agent (headless)"
         env:

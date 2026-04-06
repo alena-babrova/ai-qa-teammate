@@ -32,7 +32,7 @@
         "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
       }
     },
-    "Framelink_Figma_MCP": {
+    "figma": {
       "command": "npx",
       "args": [
         "-y",
