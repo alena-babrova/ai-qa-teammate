@@ -60,7 +60,7 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
-- [ ] Confluence/Figma MCP used to fetch **story-linked** URLs when present (**`jira-test-issues.mdc`**); skipped when no links. On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
+- [ ] Confluence/Figma MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** Figma/Confluence calls (one success per distinct target; no browsing). On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.

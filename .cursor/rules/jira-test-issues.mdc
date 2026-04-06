@@ -84,11 +84,17 @@ Whenever test generation runs against a story that may already have **Test** iss
 - Typical signals: hostnames or paths for your Confluence instance (e.g. **`/wiki/`**, **`confluence.`**, org knowledge-base hosts), page links embedded in the description or AC.
 - Use **Confluence** read/search tools from the **Atlassian MCP** server (**`atlassian`** in **`.cursor/mcp.json`**). Exact tool names depend on the server build—use whatever Confluence tools the session exposes (get page, search, etc.).
 - **Read-only:** use MCP to pull content needed to understand acceptance criteria, flows, or copy **referenced by the link**. **Do not** invent details that exist only on the linked page without fetching it when the link is present and MCP is available.
+- **Minimize calls:** Deduplicate URLs; **one** successful read per **distinct** page is enough—**do not** re-fetch the same page, run broad Confluence searches, or open linked child pages unless the story explicitly links to them.
 
 ### When Figma links appear
 
 - Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers.
 - Use tools from the **Figma MCP** server (**`acuvity-mcp-server-figma`** in **`.cursor/mcp.json`**). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
+- **Minimize Figma API calls (Cursor / CI — reduces 429 rate limits):**
+  - **Collect first:** Parse the story once; list **unique** file keys (and node ids if present). **Deduplicate** identical URLs.
+  - **Prefer fewer, wider reads:** If a tool can return a **whole file** or **multiple nodes in one call**, use that instead of many small calls. **Do not** enumerate every frame or component “to be thorough.”
+  - **One success per file key:** After a call returns usable data for a file, **do not** call Figma again for the same file key unless the first response was empty or clearly incomplete.
+  - **No exploration:** **Do not** use Figma MCP to browse, search, or open files **not** linked from the story text.
 
 ### If there are no such links
 
