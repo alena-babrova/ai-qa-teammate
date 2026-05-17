@@ -5,7 +5,8 @@
  * CONTAINER_CMD: podman (local default) or docker (typical in GitHub Actions).
  * Normalizes **`JIRA_URL`** and, when set, **`CONFLUENCE_URL`** to **scheme + host** (from env or CI variables).
  * **`JIRA_URL`** is required for a successful render. **`CONFLUENCE_URL`** is optional (empty when unset).
- * Confluence credentials (**`CONFLUENCE_USERNAME`**, **`CONFLUENCE_API_TOKEN`**) and **`FIGMA_API_KEY`**
+ * Confluence credentials (**`CONFLUENCE_USERNAME`**, **`CONFLUENCE_API_TOKEN`**), **`FIGMA_API_KEY`**, and
+ * GitLab (**`GITLAB_API_URL`**, **`GITLAB_PERSONAL_ACCESS_TOKEN`**) are optional (empty when unset).
  * Writes .cursor/mcp.json. Does not print secrets.
  */
 
@@ -59,7 +60,14 @@ function applyDefaults() {
   }
 
   // Default optional vars to empty string so missing secrets don't fail the render.
-  for (const key of ["CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN", "FIGMA_API_KEY"]) {
+  for (const key of [
+    "CONFLUENCE_URL",
+    "CONFLUENCE_USERNAME",
+    "CONFLUENCE_API_TOKEN",
+    "FIGMA_API_KEY",
+    "GITLAB_API_URL",
+    "GITLAB_PERSONAL_ACCESS_TOKEN",
+  ]) {
     if (!process.env[key]) process.env[key] = "";
   }
 }
@@ -79,6 +87,8 @@ function main() {
     "CONFLUENCE_USERNAME",
     "CONFLUENCE_API_TOKEN",
     "FIGMA_API_KEY",
+    "GITLAB_API_URL",
+    "GITLAB_PERSONAL_ACCESS_TOKEN",
   ]);
 
   text = text.replace(pattern, (_, name) => {

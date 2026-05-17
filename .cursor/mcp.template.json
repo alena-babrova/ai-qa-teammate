@@ -46,6 +46,23 @@
       "env": {
         "FIGMA_API_KEY": "${FIGMA_API_KEY}"
       }
+    },
+    "gitlab": {
+      "command": "${CONTAINER_CMD}",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITLAB_API_URL",
+        "-e",
+        "GITLAB_PERSONAL_ACCESS_TOKEN",
+        "docker.io/mcp/gitlab:latest"
+      ],
+      "env": {
+        "GITLAB_API_URL": "${GITLAB_API_URL}",
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   }
 }
