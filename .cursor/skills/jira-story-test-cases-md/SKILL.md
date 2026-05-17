@@ -40,11 +40,29 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 ## Resolve **`STORY_KEY`** (always first)
 
 1. Parse key from URL or paste.
-2. **`jira_get_issue`** with **`issuetype`**, **`parent`**, **`summary`**.
+2. **`jira_get_issue`** with **`issuetype`**, **`parent`**, **`summary`**, **`description`**, **`status`** (and AC/DoD-style fields your MCP exposes). Set **`update_history: false`** on reads when the tool supports it.
 3. If Sub-task (or equivalent) and **`parent.key`** exists → **`STORY_KEY = parent.key`**. Original key is **trigger only**; do **not** use Sub-task body for scenarios.
 4. Else **`STORY_KEY`** = that issue’s key.
 5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author **`tests[]`** or Markdown cases until this passes. On failure: **do not** write **`tests.json`** / **`meta.json`** in CI (job must fail at verify)—see **`.cursor/rules/jira-test-issues.mdc`** (**Pre-generation MCP gate**).
 6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence**, **Figma**, or **EPAM GitLab** (**`git.epam.com`**) URLs, use the **Atlassian** (Confluence), **Figma**, and **GitLab** MCP servers to **read** linked pages, designs, or GitLab files **before** authoring tests—see **`.cursor/rules/jira-test-issues.mdc`** → **Story-linked Confluence, Figma, and GitLab**.
+
+## Reference Jira **`Test`** issues as style source (optional)
+
+Use **only** when the user **explicitly** asks to mirror **existing Jira `Test`** issues or provides **`Test`** keys/URLs or a **parent** Story/Task/Epic whose **linked** Tests should define granularity and tone. This does **not** replace the EPMRPP rule: stay **compatible** with **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** unless the user requests strict copy from Jira.
+
+- **Direct `Test` key(s):** For each key, **`jira_get_issue`** with fields at least **`summary`**, **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result). Mirror summary prefix patterns, section labels, numbering (`# ` vs **`1.`**), and bundling when helpful.
+- **Parent Story/Task/Epic only:** List linked Tests, e.g. JQL  
+  `issue in linkedIssues(<PARENT_KEY>) AND issuetype = Test ORDER BY key ASC`  
+  (paginate with your MCP’s **`limit`** / **`start_at`**). Then fetch **`customfield_19206`** / **`customfield_19207`** per **`Test`** key. **If zero linked Tests:** say so; do **not** fabricate a reference suite—proceed from the story using the EPMRPP rule only, or ask the user for **`Test`** keys.
+- **Wrong field IDs:** If step/expected fields are empty, use **`jira_search_fields`** (or equivalent) for **Test steps** / **Expected result** for that project and re-fetch.
+
+## Authoring rules
+
+- Map story **acceptance criteria** and **numbered / Gherkin** scenarios to **discrete** test cases; split when an explicit reference suite (above) would split.
+- **Localization / languages:** Do **not** add cases focused on translations, language switching, locale-only formatting, RTL, or multilingual copy—unless the user **explicitly** asks.
+- **Google Analytics / telemetry:** Include GA-style cases **only** if the story or user explicitly requires them (or a reference suite you are mirroring consistently includes them).
+- Respect **out of scope** in the story: do **not** add API/backend contract tests if the story says there is **no** backend/API—unless you are mirroring a reference suite **and** the user asked for that mirroring.
+- Add **edge / regression** cases when the story implies them (persistence, permissions, multiple tabs, large viewport, etc.).
 
 ## Empty story
 
@@ -56,12 +74,18 @@ If Jira tools are **unavailable** or the fetch **errors**, **do not** use this p
 
 Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. Follow **`prompts/ci-generate-tests.md`** (from **`scripts/build-ci-prompt.js`**) and **`.cursor/rules/jira-test-issues.mdc`**. On reruns, **fetch linked Tests** for **`STORY_KEY`** first; **update** matching issues, **create** only new ones—see **Sync with existing Jira Tests** in **`jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
 
+## Interaction with other skills
+
+- **`import-jira-tests-to-agentic-qa`:** **imports existing** Jira Tests into Agentic QA (read-only). This skill **authors** Markdown **`tests.json`** / Jira-shaped content **from a story**; it does not replace Jira Test creation when the user or CI requests MCP sync—see **`jira-test-issues.mdc`**.
+
 ## Checklist
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
 - [ ] Confluence / Figma / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story). On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
+- [ ] **Optional reference `Test` issues:** fetched and mirrored only when the user explicitly asked; **zero linked Tests** handled without inventing a suite.
+- [ ] **Localization / GA / out-of-scope** judgment applied per **Authoring rules**.
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.
 - [ ] If the story already has linked Tests: **no duplicates**—**update** by matching **summary**, **create** only gaps (**`jira-test-issues.mdc`**).
