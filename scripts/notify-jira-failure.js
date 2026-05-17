@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Posts a comment on the parent Jira issue when CI fails.
+ * Posts a comment on the workflow target Jira issue (ISSUE_KEY) when CI fails.
  * Env: ISSUE_KEY, JIRA_*, GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID
  */
 

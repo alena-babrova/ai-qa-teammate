@@ -1,5 +1,5 @@
 ---
-description: Jira Test issue fields (incl. Folder customfield_24001), MCP sync (update/create), no-duplicate linked Tests, STORY_KEY, CI tests.json and meta.json
+description: Jira Test issue fields (incl. Folder customfield_24001, Test Requirement customfield_29300), MCP sync (update/create), no-duplicate linked Tests, STORY_KEY, CI tests.json and meta.json
 alwaysApply: true
 ---
 
@@ -13,14 +13,15 @@ Edit the table for your instance.
 |------|--------|
 | **Project key** | `EPMRPP` |
 | **Issue type** | `Test` |
-| **Priority** | `Major` |
+| **Priority** | Set per **Test priority** (below)—**do not** default every Test to **`Major`**. |
 | **Label** (mark AI-generated Tests) | `ai-generated` |
 | **Test Steps** field (preconditions + steps) | `customfield_19206` |
 | **Expected result** field | `customfield_19207` |
 | **Test Library** (TM / library scope; UI may show as library) | `customfield_24000` |
 | **Folder** (path under library; UI may show as “Folder”) | `customfield_24001` |
+| **Test Requirement** (TM link to User Story; API name **Test requirement**) | `customfield_29300` |
 
-Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`** were confirmed via **`jira_get_issue`** on sample Tests [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175) and [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179). On [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = `EPMRPP` (project-root folder)—**do not** use **`EPMRPP`** as the **Folder** for **AI-generated** Tests. On AI-generated sample [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = **`AI Generated`** (**Folder** field id **`customfield_24001`**)—see **Test Folder (required)** below.
+**`customfield_29300`** (**Test requirement** / UI **Test Requirement**) is **`jira_search_fields`** with **`keyword`:** `Test requirement`; visible on Tests such as [EPMRPP-115882](https://jiraeu.epam.com/browse/EPMRPP-115882) (unset). Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`** were confirmed via **`jira_get_issue`** on sample Tests [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175) and [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179). On [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = `EPMRPP` (project-root folder)—**do not** use **`EPMRPP`** as the **Folder** for **AI-generated** Tests. On AI-generated sample [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = **`AI Generated`** (**Folder** field id **`customfield_24001`**)—see **Test Folder (required)** below.
 
 ### Test Folder (required)
 
@@ -28,11 +29,21 @@ Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_2
 - Keep **`customfield_24000`** = **`Test Library`** per project practice (see [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179)) unless your instance requires a different library value.
 - If the **`AI Generated`** folder option is missing in Jira Test Management, create it or obtain valid values via **`jira_get_field_options`** for **`customfield_24001`** (**`project_key=EPMRPP`**, **`issue_type=Test`**) before filing Tests.
 
+### Test priority (required)
+
+**Do not** set **`Major`** on **every** generated Test. Choose **`priority`** as a **Senior QA** would: use valid Jira **Test** priority names for your instance (e.g. **Blocker**, **Critical**, **Major**, **Minor**, **Trivial**—**verify** via story/`jira_get_issue` or team norms).
+
+- **Anchor on the User Story:** Use **`jira_get_issue(STORY_KEY)`** **`priority`** as the **baseline** when assigning each Test’s priority (often match the story for **happy-path / primary AC** cases; **not** every case must equal the story—see below).
+- **Raise** when the case guards **release-blocking**, **compliance**, **security**, **billing**, **data loss/corruption**, **permissions for sensitive actions**, or **high regression risk** on a core flow—even if the story priority looks lower, if the scenario is “if this fails, we ship a serious bug,” reflect that.
+- **Lower** for **secondary** UX, **edge cases** that rarely fire, **cosmetic** or **copy** checks, **nice-to-have** telemetry-only (e.g. GA) cases, or **optional** paths called out as low impact in the story—without under-stating real risk.
+- **Vary across tests** in the same story: primary AC vs edge vs permission matrix rows may legitimately differ (e.g. **Critical** for core create flow, **Minor** for a rare error message).
+- **On `jira_update_issue`** when refreshing linked Tests, **re-evaluate** **`priority`** if the story priority or scenario mix changed—include **`priority`** in the updated fields (**Sync with existing Jira Tests**).
+
 ### MCP create / update (custom fields)
 
-On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), and **`customfield_24001`** (Folder) using the **same value types** Jira returns for a reference Test already filed in the **target** folder (**preferred**—e.g. **`jira_get_issue(EPMRPP-114179)`** for **`AI Generated`** Folder / **`Test Library`**). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or display strings.
+On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), **`customfield_24001`** (Folder), and **`customfield_29300`** (**Test Requirement** → User Story **`STORY_KEY`**) using the **same value types** Jira returns for a reference Test (**preferred**—e.g. **`jira_get_issue(EPMRPP-114179)`** for Folder / Test Library; **`jira_get_issue(EPMRPP-115858, fields=customfield_29300)`** or any Test with **`"Test requirement"`** set for the requirement value shape). Empty reference for the field on a Test: [EPMRPP-115882](https://jiraeu.epam.com/browse/EPMRPP-115882). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or display strings.
 
-Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label and **`priority: Major`** when your Jira setup allows it.
+Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label. Set **`priority`** per **Test priority** above—not a blanket **`Major`** on all issues.
 
 **Create and link** Test issues **only via Jira MCP**. No REST publish path in this pipeline.
 
@@ -50,17 +61,17 @@ After creating or updating each Test issue, perform **both** of the following:
    **REST / MCP create:** For type **`QaSpace test`**, set **`inwardIssue` = Story (`STORY_KEY`)** and **`outwardIssue` = Test** so that a **`jira_get_issue(STORY_KEY, fields=issuelinks)`** returns each Test under **`outward_issue`** (matches manually correct links on e.g. [EPMRPP-114990](https://jiraeu.epam.com/browse/EPMRPP-114990)). **Do not** swap keys—**`inwardIssue` = Test** and **`outwardIssue` = Story** makes the Story show **is a test for**.
 
    If your MCP names the tool **`jira_create_issue_link`** (or similar), pass the same type (`name` **`QaSpace test`** or `id` **`12700`**) and the same inward/outward issue keys. **Do not** use a different “Test” link type on this instance (e.g. type name **`Test`** / id **`10600`**) unless the team standard changes—verify with **`jira_get_issue`** on a correctly linked Story.
-2. **Requirement field:** Set the Jira **Requirement** field on the Test to **`STORY_KEY`** (the story issue key). The field id may vary by instance—verify with **`jira_get_issue`** on a reference Test that already has a Requirement set (`fields=*all`); look for a field whose value is an issue-picker object pointing to a story. Pass the same value shape when calling **`jira_create_issue`** / **`jira_update_issue`**.
+2. **Test Requirement (`STORY_KEY`):** Set **`customfield_29300`** (**Test Requirement** in the UI; Jira name **Test requirement**, TM type `requirement`—see **`jira_search_fields`** with **`keyword`:** `Test requirement`) to the **User Story** **`STORY_KEY`** (same key as the **QaSpace test** link and as git **`generated/jira-tests/<STORY_KEY>/`**). On [EPMRPP-115882](https://jiraeu.epam.com/browse/EPMRPP-115882) the field is present but unset (**`customfield_29300`** has an empty **`value`**). Mirror the **value shape** from any Test that already has a requirement (e.g. **`jira_get_issue(EPMRPP-115858, fields=customfield_29300)`**—story [EPMRPP-114988](https://jiraeu.epam.com/browse/EPMRPP-114988)) when calling **`jira_create_issue`** / **`jira_update_issue`**. **Do not** point **Test requirement** at a Sub-task key when **`STORY_KEY`** is the parent User Story.
 
-Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, try alternatives your MCP exposes; continue best-effort. **Do not** describe linking/Requirement/MCP limitations in the **completion comment** on **`STORY_KEY`** after tests are synced (**Story comment after successful test generation**).
+Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, try alternatives your MCP exposes; continue best-effort. **Do not** describe linking / **Test requirement** / MCP limitations in the **completion comment** on the **Test Design** Sub-task after tests are synced (**Test Design sub-task comment after successful test generation**); **never** put that narrative on **`STORY_KEY`**.
 
 ### Sync with existing Jira Tests (no duplicates)
 
 Whenever test generation runs against a story that may already have **Test** issues.
 
 1. **After** the **Pre-generation MCP gate** passes, **before** bulk **`jira_create_issue`**, discover Tests already **linked** to **`STORY_KEY`**: e.g. **`jira_get_issue(STORY_KEY)`** with **`issuelinks`** (links where the story is **is tested by** the Test, or equivalent names per instance: **Tests** / **is tested by** / **tested by** / **tests**), and/or **`jira_search`** / JQL your MCP supports to list **Test** issues tied to that story.
-2. **Do not** create a second Test for the same logical case. Match existing issues to planned **`tests[]`** rows by **Jira Test Summary** ↔ **`tests[].summary`** (normalize for comparison: trim, case-insensitive). When a match exists, use **`jira_update_issue`** to refresh **summary**, **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`**, **`labels`**, and any other fields you maintain—**do not** **`jira_create_issue`** again for that row.
-3. Use **`jira_create_issue`** **only** for planned tests that have **no** matching linked Test; after creation apply both linking steps from **Linking Tests to the Story** (relation type `is tested by` + Requirement field).
+2. **Do not** create a second Test for the same logical case. Match existing issues to planned **`tests[]`** rows by **Jira Test Summary** ↔ **`tests[].summary`** (normalize for comparison: trim, case-insensitive). When a match exists, use **`jira_update_issue`** to refresh **summary**, **`priority`** (**Test priority**), **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`**, **`customfield_29300`** (**Test Requirement** → **`STORY_KEY`**), **`labels`**, and any other fields you maintain—**do not** **`jira_create_issue`** again for that row.
+3. Use **`jira_create_issue`** **only** for planned tests that have **no** matching linked Test; after creation apply both linking steps from **Linking Tests to the Story** (relation type `is tested by` + **`customfield_29300`**).
 4. Do **not** assume an empty Jira side when re-running the pipeline; always **read linked Tests first**, then **update or add**.
 
 ## Cursor Agent CLI (headless)
@@ -74,7 +85,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ## Pre-generation MCP gate (before any tests)
 
-**Before** authoring tests or writing **`generated/jira-tests/<STORY_KEY>/tests.json`**, use **Jira MCP** to call **`jira_getIssue(STORY_KEY)`** (or equivalent) and load at least Jira **`summary`**, **`description`**, **`issuetype`**, **`parent`**, and AC/DoD-style fields if available.
+**Before** authoring tests or writing **`generated/jira-tests/<STORY_KEY>/tests.json`**, use **Jira MCP** to call **`jira_getIssue(STORY_KEY)`** (or equivalent) and load at least Jira **`summary`**, **`description`**, **`priority`**, **`issuetype`**, **`parent`**, and AC/DoD-style fields if available.
 
 - **Gate passes** when: the MCP call **succeeds**; the Jira issue **`summary`** (the **issue title** in Jira—**not** the **`tests[].summary`** field you write in **`tests.json`**) is a **non-empty** string; **`description`** is **present** in the response (value may be null, empty, or empty ADF).
 - **Only after the gate passes:** derive tests, write **`tests.json`**, sync Jira Tests (see **Sync with existing Jira Tests**), or apply **Empty story** (below) if description + AC are genuinely empty.
@@ -117,7 +128,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ### If links exist but MCP read fails
 
-- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text. **Do not** mention Confluence, Figma, or GitLab read failures in the **completion comment** on **`STORY_KEY`** after tests are generated (**Story comment after successful test generation**). **Never** put tokens or secrets in **`generated/`** or repo files.
+- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text. **Do not** mention Confluence, Figma, or GitLab read failures in the **completion comment** on the **Test Design** Sub-task after tests are generated (**Test Design sub-task comment after successful test generation**); **do not** comment those on **`STORY_KEY`**. **Never** put tokens or secrets in **`generated/`** or repo files.
 - **Streamed / assistant-visible output (CI log and IDE):** When a Confluence, Figma, or GitLab MCP call fails—**including HTTP 429**, rate limits, timeouts, or auth errors—**do not** narrate the failure in your reply. **Do not** quote status codes (**`429`**, **`403`**, etc.), provider error payloads, or hedging lines such as *“Figma returned 429; continuing from Jira only”* / *“Confluence unavailable; using Jira only”*. Proceed with the next useful step (e.g. Jira MCP) **without** announcing that you are falling back or why linked specs were skipped.
 
 ## Jira fetch required (not the same as empty story)
@@ -169,16 +180,21 @@ After MCP **creates and/or updates** Tests **or** when **`tests`** is empty:
 
 **`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). Each entry is the Jira **Test issue key** for that **`tests[]`** row after sync—**updated** existing issues and **newly created** issues both count (the name **`mcpCreatedKeys`** is historical). **`scripts/verify-mcp-jira.js`** enforces length and valid keys in CI.
 
-## Story comment after successful test generation
+## Test Design sub-task comment after successful test generation
 
-After **`tests.json`** and **`meta.json`** are written and Jira **Test** issues are synced for **`STORY_KEY`**, add **one** Jira **comment** on **`STORY_KEY`** (via Jira MCP, e.g. add comment on issue), unless your team already posts an equivalent summary elsewhere.
+**Do not** add this completion summary comment on the **User Story** (**`STORY_KEY`**).
+
+After **`tests.json`** and **`meta.json`** are written and Jira **Test** issues are synced for **`STORY_KEY`**, add **one** Jira **comment** (via Jira MCP) **only** on the **Test Design** **Sub-task**—the work item that tracks test design for that story, **not** on **`STORY_KEY`**.
+
+- **GitHub Actions:** **`__ISSUE_KEY__`** is the workflow dispatch target. When **`__ISSUE_KEY__` ≠ `__STORY_KEY__`**, **`__ISSUE_KEY__`** is the **Test Design** Sub-task (**trigger only** for requirements); post the completion comment **only** on **`__ISSUE_KEY__`**. When **`__ISSUE_KEY__` = `__STORY_KEY__`** (dispatch from the story itself), **do not** add this comment on the story—**omit** the completion comment (prefer dispatching from the Test Design Sub-task).
+- **IDE / manual:** Post **only** on the **Test Design** Sub-task the user or flow triggered from. If you have **`STORY_KEY`** but **no** Sub-task key for test design, **omit** the completion comment—**do not** use **`STORY_KEY`**.
 
 **Include only:**
 
 - A **short summary** line (e.g. how many Tests were created or updated, reference to **AI-generated** / **Generate Test Cases** run if helpful).
 - A **list** of the **Test** work items: each line **Jira issue key** + **Test Summary** title (or markdown links `KEY — title`). Match **`mcpCreatedKeys`** / **`tests[].summary`**.
 
-**Do not** include in that comment: **gaps**, **limitations**, **disclaimers**, partial failures, MCP/tool **could not**, missing coverage, linked specs (Confluence / Figma / GitLab) **could not be retrieved**, linking/Requirement **issues**, “manual follow-up”, or any negative or hedging language. Keep the comment factual and positive—summary + list only.
+**Do not** include in that comment: **gaps**, **limitations**, **disclaimers**, partial failures, MCP/tool **could not**, missing coverage, linked specs (Confluence / Figma / GitLab) **could not be retrieved**, linking or **Test requirement** issues, “manual follow-up”, or any negative or hedging language. Keep the comment factual and positive—summary + list only.
 
 ## MCP servers (CI)
 
