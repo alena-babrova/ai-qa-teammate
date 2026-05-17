@@ -147,15 +147,6 @@ jobs:
           "${AGENT_BIN}" --trust --approve-mcps --force --model "${MODEL}" -p "${PROMPT}" --print \
             --output-format stream-json --stream-partial-output
 
-      - name: "2. Generate — ensure TM Folder + Test requirement (REST)"
-        env:
-          STORY_KEY: ${{ env.STORY_KEY }}
-          ISSUE_KEY: ${{ env.ISSUE_KEY }}
-          JIRA_URL: ${{ vars.JIRA_URL }}
-          JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: node scripts/ensure-jira-test-tm-fields.js "${STORY_KEY}"
-
       - name: "2. Generate — verify MCP created all Test issues in Jira"
         run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
 

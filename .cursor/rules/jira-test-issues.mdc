@@ -45,7 +45,7 @@ On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivale
 
 Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label. Set **`priority`** per **Test priority** above—not a blanket **`Major`** on all issues.
 
-**Create and link** Test issues **only via Jira MCP** (**`jira_create_issue`** / **`jira_update_issue`** and issue links)—**do not** add a separate REST path that **creates** tests or replaces MCP. **GitHub Actions:** after the headless agent finishes, **`scripts/ensure-jira-test-tm-fields.js`** uses Jira REST (**`PUT /rest/api/2/issue/{key}`**) **only** to normalize **`customfield_24001`** (Folder → **`AI Generated `** when the instance uses that label) and **`customfield_29300`** (Test Requirement → **`STORY_KEY`**) on each key in **`meta.mcpCreatedKeys`**, so TM metadata matches manually fixed tickets (e.g. [EPMRPP-115879](https://jiraeu.epam.com/browse/EPMRPP-115879)) when MCP/LLM omit those fields.
+**Create and link** Test issues **only via Jira MCP** (**`jira_create_issue`** / **`jira_update_issue`** and issue links)—**do not** add a GitHub Actions step that **creates** Tests or replaces MCP using REST-only publish.
 
 ### Linking Tests to the Story (required)
 
