@@ -20,18 +20,17 @@ Edit the table for your instance.
 | **Test Library** (TM / library scope; UI may show as library) | `customfield_24000` |
 | **Folder** (path under library; UI may show as “Folder”) | `customfield_24001` |
 
-Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`** were confirmed via **`jira_get_issue`** on sample Test [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175) (`fields=*all`). On that issue, **`customfield_24000`** = `Test Library` and **`customfield_24001`** = `EPMRPP` (project-root folder only). **Do not** use that sample as the folder **target**—see **Test Folder (required)** below.
+Field ids for **`customfield_19206`**, **`customfield_19207`**, **`customfield_24000`**, **`customfield_24001`** were confirmed via **`jira_get_issue`** on sample Tests [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175) and [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179). On [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = `EPMRPP` (project-root folder)—**do not** use **`EPMRPP`** as the **Folder** for **AI-generated** Tests. On AI-generated sample [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179), **`customfield_24000`** = `Test Library` and **`customfield_24001`** = **`AI Generated`** (**Folder** field id **`customfield_24001`**)—see **Test Folder (required)** below.
 
 ### Test Folder (required)
 
-- **Do not** leave AI-generated Tests at the **EPMRPP project root** folder only. **`customfield_24001`** must reflect the team layout **`EPMRPP` → `AI Generated` → `<STORY_KEY>`** (not bare `EPMRPP` when the standard is the nested path).
-- **`<STORY_KEY>`** is the same canonical story key as elsewhere in this rule (parent when dispatch was a Sub-task).
-- Keep **`customfield_24000`** consistent with project practice (e.g. `Test Library` on [EPMRPP-114175](https://jiraeu.epam.com/browse/EPMRPP-114175)) unless your instance requires a different library value.
-- If the folder **`AI Generated` / `<STORY_KEY>`** does not exist yet, create it under **`AI Generated`** in Jira Test Management (UI or whatever API your org supports) before or when filing Tests.
+- For **AI-generated** Tests, set **`customfield_24001`** (Folder) to **`AI Generated`**—same field and value shape as [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179) (`labels` include **`ai-generated`**). **Do not** file AI-generated Tests under the **`EPMRPP`** project-root folder only.
+- Keep **`customfield_24000`** = **`Test Library`** per project practice (see [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179)) unless your instance requires a different library value.
+- If the **`AI Generated`** folder option is missing in Jira Test Management, create it or obtain valid values via **`jira_get_field_options`** for **`customfield_24001`** (**`project_key=EPMRPP`**, **`issue_type=Test`**) before filing Tests.
 
 ### MCP create / update (custom fields)
 
-On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), and **`customfield_24001`** (Folder) using the **same value types** Jira returns for a reference Test already filed in the **target** folder (**preferred**). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or path strings. Exact format for the nested path (slash-separated string vs id) is instance-specific—**verify** with **`jira_get_issue`** on any Test already under **`EPMRPP / AI Generated / <some story key>`**.
+On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent, pass **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result), **`customfield_24000`** (Test Library), and **`customfield_24001`** (Folder) using the **same value types** Jira returns for a reference Test already filed in the **target** folder (**preferred**—e.g. **`jira_get_issue(EPMRPP-114179)`** for **`AI Generated`** Folder / **`Test Library`**). If needed, use **`jira_get_field_options`** for **`customfield_24001`** with **`project_key=EPMRPP`** and **`issue_type=Test`** to obtain valid option ids or display strings.
 
 Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label and **`priority: Major`** when your Jira setup allows it.
 
@@ -41,7 +40,16 @@ Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) o
 
 After creating or updating each Test issue, perform **both** of the following:
 
-1. **Issue link — relation `is tested by` (Story → Test):** The link must read as **Jira Story (`STORY_KEY`) → `is tested by` → Test ticket** (the Test issue is what tests the story; on the Story issue, the link section shows **is tested by** pointing to each Test). Call **`jira_create_issue_link`** (or equivalent) with link type **`is tested by`** so **`STORY_KEY`** is the **source** side of that relationship and the **Test** issue key is the **target**—match your Jira instance’s inward/outward issue parameters for that link type (verify with **`jira_get_issue`** on a manually linked example if the API shape is unclear).
+1. **Issue link — relation `is tested by` (Story → Test):** On the **Story** issue, linked Tests must appear under **is tested by**, **not** under **is a test for**. Those two phrases are the inward/outward labels of the **same** Jira link type on **`jiraeu.epam.com`**; wording depends on **which issue is `inwardIssue` vs `outwardIssue`** when the link is created.
+
+   **EPMRPP (`jiraeu.epam.com`) — use this link type only for Story ↔ Test:**
+   - **Link type name:** `QaSpace test`
+   - **Link type id:** `12700` (REST: `/rest/api/2/issueLinkType/12700`)
+   - **`jira_get_link_types`** with `name_filter: test` lists it with **`inward`:** `is a test for`, **`outward`:** `is tested by`.
+
+   **REST / MCP create:** For type **`QaSpace test`**, set **`inwardIssue` = Story (`STORY_KEY`)** and **`outwardIssue` = Test** so that a **`jira_get_issue(STORY_KEY, fields=issuelinks)`** returns each Test under **`outward_issue`** (matches manually correct links on e.g. [EPMRPP-114990](https://jiraeu.epam.com/browse/EPMRPP-114990)). **Do not** swap keys—**`inwardIssue` = Test** and **`outwardIssue` = Story** makes the Story show **is a test for**.
+
+   If your MCP names the tool **`jira_create_issue_link`** (or similar), pass the same type (`name` **`QaSpace test`** or `id` **`12700`**) and the same inward/outward issue keys. **Do not** use a different “Test” link type on this instance (e.g. type name **`Test`** / id **`10600`**) unless the team standard changes—verify with **`jira_get_issue`** on a correctly linked Story.
 2. **Requirement field:** Set the Jira **Requirement** field on the Test to **`STORY_KEY`** (the story issue key). The field id may vary by instance—verify with **`jira_get_issue`** on a reference Test that already has a Requirement set (`fields=*all`); look for a field whose value is an issue-picker object pointing to a story. Pass the same value shape when calling **`jira_create_issue`** / **`jira_update_issue`**.
 
 Both steps apply to **newly created** and **updated** (existing) Test issues alike. If the MCP tool does not support one of these operations, try alternatives your MCP exposes; continue best-effort. **Do not** describe linking/Requirement/MCP limitations in the **completion comment** on **`STORY_KEY`** after tests are synced (**Story comment after successful test generation**).
