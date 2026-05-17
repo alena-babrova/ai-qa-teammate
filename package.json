@@ -8,6 +8,7 @@
   "scripts": {
     "render-mcp": "node scripts/render-mcp-config.js",
     "verify:jira-mcp": "node scripts/verify-mcp-jira.js",
+    "ensure:jira-tm-fields": "node scripts/ensure-jira-test-tm-fields.js",
     "verify:figma": "node scripts/verify-figma-access.js",
     "jira:pipeline-start": "node scripts/jira-pipeline-start.js",
     "normalize:issue": "node scripts/normalize-issue-input.js"

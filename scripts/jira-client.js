@@ -64,6 +64,11 @@ export function createJiraClient(opts) {
         outwardIssue: { key: outwardKey },
       });
     },
+    async updateIssue(issueKey, fields) {
+      return request("PUT", `/issue/${encodeURIComponent(issueKey)}`, {
+        fields,
+      });
+    },
     async addComment(issueKey, bodyText) {
       return request("POST", `/issue/${encodeURIComponent(issueKey)}/comment`, {
         body: bodyText,

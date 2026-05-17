@@ -25,7 +25,7 @@ Edit the table for your instance.
 
 ### Test Folder (required)
 
-- For **AI-generated** Tests, set **`customfield_24001`** (Folder) to **`AI Generated`**—same field and value shape as [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179) (`labels` include **`ai-generated`**). **Do not** file AI-generated Tests under the **`EPMRPP`** project-root folder only.
+- For **AI-generated** Tests, set **`customfield_24001`** (Folder) to the **`AI Generated`** TM option—on **`jiraeu.epam.com`** the option **label** includes a **trailing space** (`**`AI Generated `**`) as on [EPMRPP-115879](https://jiraeu.epam.com/browse/EPMRPP-115879); mirror **`jira_get_issue`** / **`jira_get_field_options`** for your instance. Same idea as [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179) (`labels` include **`ai-generated`**). **Do not** file AI-generated Tests under the **`EPMRPP`** project-root folder only.
 - Keep **`customfield_24000`** = **`Test Library`** per project practice (see [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179)) unless your instance requires a different library value.
 - If the **`AI Generated`** folder option is missing in Jira Test Management, create it or obtain valid values via **`jira_get_field_options`** for **`customfield_24001`** (**`project_key=EPMRPP`**, **`issue_type=Test`**) before filing Tests.
 
@@ -45,7 +45,7 @@ On **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivale
 
 Use these in **`jira_create_issue`** / **`jira_update_issue`** (mcp-atlassian) or equivalent (**`jira_createIssue`** / **`jira_updateIssue`**). **Every** new Test must include the **`ai-generated`** label. Set **`priority`** per **Test priority** above—not a blanket **`Major`** on all issues.
 
-**Create and link** Test issues **only via Jira MCP**. No REST publish path in this pipeline.
+**Create and link** Test issues **only via Jira MCP** (**`jira_create_issue`** / **`jira_update_issue`** and issue links)—**do not** add a separate REST path that **creates** tests or replaces MCP. **GitHub Actions:** after the headless agent finishes, **`scripts/ensure-jira-test-tm-fields.js`** uses Jira REST (**`PUT /rest/api/2/issue/{key}`**) **only** to normalize **`customfield_24001`** (Folder → **`AI Generated `** when the instance uses that label) and **`customfield_29300`** (Test Requirement → **`STORY_KEY`**) on each key in **`meta.mcpCreatedKeys`**, so TM metadata matches manually fixed tickets (e.g. [EPMRPP-115879](https://jiraeu.epam.com/browse/EPMRPP-115879)) when MCP/LLM omit those fields.
 
 ### Linking Tests to the Story (required)
 
