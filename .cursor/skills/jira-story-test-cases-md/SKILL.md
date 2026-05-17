@@ -44,7 +44,7 @@ Deriving **manual** tests from a **Jira User Story** or **Epic** (description, A
 3. If Sub-task (or equivalent) and **`parent.key`** exists → **`STORY_KEY = parent.key`**. Original key is **trigger only**; do **not** use Sub-task body for scenarios.
 4. Else **`STORY_KEY`** = that issue’s key.
 5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author **`tests[]`** or Markdown cases until this passes. On failure: **do not** write **`tests.json`** / **`meta.json`** in CI (job must fail at verify)—see **`.cursor/rules/jira-test-issues.mdc`** (**Pre-generation MCP gate**).
-6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence** or **Figma** URLs, use the **Atlassian** (Confluence) and **Figma** MCP servers to **read** linked pages or designs **before** authoring tests—see **`.cursor/rules/jira-test-issues.mdc`** → **Story-linked Confluence and Figma**.
+6. Use that same response for requirements: **`description`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence**, **Figma**, or **EPAM GitLab** (**`git.epam.com`**) URLs, use the **Atlassian** (Confluence), **Figma**, and **GitLab** MCP servers to **read** linked pages, designs, or GitLab files **before** authoring tests—see **`.cursor/rules/jira-test-issues.mdc`** → **Story-linked Confluence, Figma, and GitLab**.
 
 ## Empty story
 
@@ -60,7 +60,7 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
-- [ ] Confluence/Figma MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** Figma/Confluence calls (one success per distinct target; no browsing). On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
+- [ ] Confluence / Figma / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story). On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
 - [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above.

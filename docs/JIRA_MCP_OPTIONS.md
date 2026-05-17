@@ -9,7 +9,7 @@ Your Jira host (e.g. `jiraeu.epam.com`) is often **Jira Data Center** (or Server
 - **Configuration:** **`.cursor/mcp.template.json`** runs the container via **`${CONTAINER_CMD}`** — **`docker`** in GitHub Actions, **`podman`** by default when you run **`npm run render-mcp`** locally (override with **`CONTAINER_CMD=docker`** if needed).
 - **Tool names** are upstream’s (e.g. **`jira_get_issue`**, **`jira_create_issue`**). Repo rules refer to **`get_issue`** / **`jira_getIssue`** as generic equivalents.
 
-CI: **`.github/workflows/generate-test-cases.yml`** pulls the Atlassian and (when using Figma) Acuvity images, then runs **`node scripts/render-mcp-config.js`** (then copies **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** for the Cursor CLI).
+CI: **`.github/workflows/generate-test-cases.yml`** pulls the Atlassian, Acuvity Figma, and GitLab MCP images, then runs **`node scripts/render-mcp-config.js`** (then copies **`.cursor/mcp.json`** to **`~/.cursor/mcp.json`** for the Cursor CLI).
 
 ## Alternatives
 

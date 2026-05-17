@@ -28,7 +28,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
 | `FIGMA_API_KEY` | No | Figma API token for the Figma MCP server |
 
-`CONFLUENCE_*` and **`FIGMA_API_KEY`** are optional. When set, the agent can use Confluence and/or Figma for extra context during test generation.
+`CONFLUENCE_*` and **`FIGMA_API_KEY`** are optional. When set, the agent can use Confluence and/or Figma for extra context during test generation. **`GITLAB_API_URL`** (repository variable) and **`GITLAB_PERSONAL_ACCESS_TOKEN`** (secret) are optional—when set, the agent can read **EPAM GitLab** (**`git.epam.com`**) URLs linked from the story via GitLab MCP (**`jira-test-issues.mdc`**).
 
 **Repository variables** (**Variables** tab, not **Secrets**): **`JIRA_URL`** (required for CI) and optional **`CONFLUENCE_URL`**. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**. Details: **`docs/GITHUB_SECRETS.md`**.
 
