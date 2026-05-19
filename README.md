@@ -15,7 +15,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 
 **Secrets:** **Settings** → **Secrets and variables** → **Actions** → **Secrets**. (Organization secrets are supported if your org allows this repo to use them.)
 
-**Variables** (not secrets): same page → **Variables** tab — set **`JIRA_URL`** (required) and optionally **`CONFLUENCE_URL`**. These instance URLs are **never** stored as Actions secrets; the workflow reads **`vars.JIRA_URL`** / **`vars.CONFLUENCE_URL`** only.
+**Variables** (not secrets): same page → **Variables** tab. Instance URLs are **never** stored as Actions secrets; the workflow reads **`vars.*`** only.
 
 **Secrets to create:**
 
@@ -27,14 +27,22 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
 | `FIGMA_API_KEY` | No | Figma API token for the Figma MCP server |
+| `GITLAB_PERSONAL_ACCESS_TOKEN` | No | GitLab personal access token for GitLab MCP |
 
-`CONFLUENCE_*` and **`FIGMA_API_KEY`** are optional. When set, the agent can use Confluence and/or Figma for extra context during test generation. **`GITLAB_API_URL`** (repository variable) and **`GITLAB_PERSONAL_ACCESS_TOKEN`** (secret) are optional—when set, the agent can read **EPAM GitLab** (**`git.epam.com`**) URLs linked from the story via GitLab MCP (**`jira-test-issues.mdc`**).
+**Repository variables** (**Variables** tab, not **Secrets**):
 
-**Repository variables** (**Variables** tab, not **Secrets**): **`JIRA_URL`** (required for CI) and optional **`CONFLUENCE_URL`**. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**. Details: **`docs/GITHUB_SECRETS.md`**.
+| Variable | Required | Purpose (summary) |
+|----------|----------|-------------------|
+| `JIRA_URL` | Yes | Jira instance URL (required for CI) |
+| `CONFLUENCE_URL` | No | Confluence instance URL for Confluence MCP |
+| `CURSOR_AGENT_MODEL` | No | Default Cursor Agent model when the run does not pass one (see below) |
+| `GITLAB_API_URL` | No | GitLab API base URL (e.g. `https://git.epam.com/api/v4`) |
+
+`CONFLUENCE_*`, **`FIGMA_API_KEY`**, and **`GITLAB_*`** are optional—when set, the agent can use those MCP servers for story-linked context. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**.
+
+**Cursor Agent model in CI:** **Run workflow** includes a **model** dropdown (default **`composer-2.5`**). **`repository_dispatch`** / Jira automation can send **`client_payload.cursor_model`**; optional variable **`CURSOR_AGENT_MODEL`** applies when neither is set.
 
 For full detail on each secret and variable, see **[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md)**.
-
-**Cursor Agent model in CI:** **Run workflow** includes a **model** dropdown (default **`composer-2.5`**). **`repository_dispatch`** / Jira automation can send **`client_payload.cursor_model`**; optional variable **`CURSOR_AGENT_MODEL`** applies when neither is set. See **`docs/GITHUB_SECRETS.md`**.
 
 ## Other setup
 
