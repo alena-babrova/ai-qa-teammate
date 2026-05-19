@@ -16,10 +16,10 @@ on:
         description: Cursor Agent LLM
         required: true
         type: choice
-        default: composer-2
+        default: composer-2.5
         options:
+          - composer-2.5
           - composer-2
-          - composer-2-fast
           - gpt-5
           - claude-4-sonnet
           - claude-4-opus
@@ -48,8 +48,8 @@ jobs:
       GITLAB_API_URL: ${{ vars.GITLAB_API_URL }}
       GITLAB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITLAB_PERSONAL_ACCESS_TOKEN }}
       CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-      # Precedence: manual workflow input → repository_dispatch client_payload.cursor_model → repo variable → composer-2
-      CURSOR_AGENT_MODEL: ${{ github.event.inputs.cursor_model || github.event.client_payload.cursor_model || vars.CURSOR_AGENT_MODEL || 'composer-2' }}
+      # Precedence: manual workflow input → repository_dispatch client_payload.cursor_model → repo variable → composer-2.5
+      CURSOR_AGENT_MODEL: ${{ github.event.inputs.cursor_model || github.event.client_payload.cursor_model || vars.CURSOR_AGENT_MODEL || 'composer-2.5' }}
     steps:
       # --- Phase 1: verify configuration ---
       - uses: actions/checkout@v4

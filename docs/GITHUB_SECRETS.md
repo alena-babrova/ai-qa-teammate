@@ -26,7 +26,7 @@ Under **Settings → Secrets and variables → Actions → Variables** (the **Va
 |----------|----------|----------|
 | `JIRA_URL` | Yes (CI) | Jira instance URL (e.g. `https://jira.company.com`). **Variable only.** Used by Jira REST scripts and the Atlassian MCP container after **`render-mcp-config.js`** normalizes to scheme + host. |
 | `CONFLUENCE_URL` | No | Confluence instance URL when using Confluence MCP. **Variable only.** Same normalization; omit if unused. |
-| `CURSOR_AGENT_MODEL` | No | Optional repo-wide LLM override when the workflow is **not** started from the Actions UI with a model choice. **Precedence:** **Run workflow** input **`cursor_model`** → **`repository_dispatch`** payload **`client_payload.cursor_model`** → this variable → default **`composer-2`**. Locally, **`scripts/resolve-cursor-agent-model.js`** uses **`composer-2`** when **`CURSOR_AGENT_MODEL`** is unset. |
+| `CURSOR_AGENT_MODEL` | No | Optional repo-wide LLM override when the workflow is **not** started from the Actions UI with a model choice. **Precedence:** **Run workflow** input **`cursor_model`** → **`repository_dispatch`** payload **`client_payload.cursor_model`** → this variable → default **`composer-2.5`**. Locally, **`scripts/resolve-cursor-agent-model.js`** uses **`composer-2.5`** when **`CURSOR_AGENT_MODEL`** is unset. |
 | `GITLAB_API_URL` | No | GitLab **HTTP API base URL** (e.g. `https://gitlab.com/api/v4` or `https://git.example.com/api/v4`). Passed to the GitLab MCP container. Optional — omit if you do not use GitLab MCP. |
 
-To list model ids your account can use, run **`agent models`** (or **`agent --list-models`**) locally with **`CURSOR_API_KEY`** set; the string must match exactly (for example **`composer-2`**).
+To list model ids your account can use, run **`agent models`** (or **`agent --list-models`**) locally with **`CURSOR_API_KEY`** set; the string must match exactly (for example **`composer-2.5`**).

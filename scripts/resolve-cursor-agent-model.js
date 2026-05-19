@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Prints the Cursor Agent CLI model id for CI: CURSOR_AGENT_MODEL env if set,
- * otherwise the default **composer-2** (same as the Generate Test Cases workflow).
+ * otherwise the default **composer-2.5** (same as the Generate Test Cases workflow).
  *
  * Discover valid ids locally: agent models (with CURSOR_API_KEY set).
  */
 
-const DEFAULT_MODEL = "composer-2";
+const DEFAULT_MODEL = "composer-2.5";
 const LOG_PREFIX = "[cursor-agent-ci]";
 
 /** @param {string} model @param {string} source */
