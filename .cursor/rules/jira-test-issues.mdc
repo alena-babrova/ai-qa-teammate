@@ -76,7 +76,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ## Cursor Agent CLI (headless)
 
-- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Style:** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**. MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
+- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Style:** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**; **style context:** **`test-case-examples/CONTEXT.md`** + **`test-case-examples/`** full examples; **very optional coverage investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, then Test library JQL if needed (skill → **Investigating coverage in Jira**). MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
 
 ## Always use **STORY_KEY** — verify first
 

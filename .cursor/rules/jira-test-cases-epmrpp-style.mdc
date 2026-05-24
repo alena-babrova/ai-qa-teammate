@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## When this applies
 
-Whenever you **author** manual test cases from a Jira story (Markdown or **`tests.json`** fields), match the conventions below. **Format only** — Jira fetch, **`STORY_KEY`**, and CI manifests are in **`.cursor/rules/jira-test-issues.mdc`** and **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+Whenever you **author** manual test cases from a Jira story (Markdown or **`tests.json`** fields), match the conventions below. **Format only** — Jira fetch, **`STORY_KEY`**, and CI manifests are in **`.cursor/rules/jira-test-issues.mdc`** and **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**. For **granularity, coverage splits, and tone**, read **`test-case-examples/CONTEXT.md`** and matching **`EPMRPP-*-test-cases.md`** files. **Very optional:** when planning coverage, search the story’s **Epic** for **Closed** sibling stories and read linked **`Test`** issues from the closest matches; otherwise a small **Test** library JQL sample—see skill → **Investigating coverage in Jira**.
 
 **Test case titles** (Markdown **`##`**, Jira Test **Summary**, **`tests[].summary`**) must **not** include the User Story issue key (**`STORY_KEY`**) or a Sub-task dispatch key when it differs from **`STORY_KEY`**. Traceability comes from the output folder **`generated/jira-tests/<STORY_KEY>/`** and Jira **links**, not from the title text.
 
