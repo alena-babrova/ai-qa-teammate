@@ -1,6 +1,6 @@
 # EPMRPP test-case generation context
 
-Derived from all files in **`test-case-examples/`** (332 test cases across 10 stories). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in the sibling `EPMRPP-*-test-cases.md` files for deep reference.
+Derived from all files in **`test-case-examples/`** and **`test-case-examples/API tests/`** (472 test cases across 16 stories; **194** API-only cases in **`API tests/`**). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in **`EPMRPP-*-test-cases.md`** (root) and **`API tests/EPMRPP-*-test-cases.md`** for deep reference — prefer **`API tests/`** when authoring REST coverage.
 
 ---
 
@@ -42,7 +42,7 @@ Every deliverable follows the same skeleton:
 | `<Area>. <Page>. <Behavior>` | UI / functional | `Organizations. Projects page. Layout` |
 | `<Area>. <Page>. Permissions. <Behavior>` | Role/access matrix | `Organizations. Projects page. Permissions. Member assigned to the Organization and Projects can view only their assigned Projects` |
 | `GA. <Scope>. <Page>. <Behavior>` | Analytics | `GA. Instance level. All Users page. GA is sent by clicking on the "Create user" button` |
-| `API. <Controller>. <Actor>. <Behavior>` | REST | `API. Organization User. Admin unassigns another user from INTERNAL organization` |
+| `API. <Controller>. <Behavior>` | REST | `API. Project Controller. Admin that is assigned to the project can update project name` |
 | `<Feature>. <Behavior>` | Named feature/plugin | `Mobitru. Add Global integration`, `Cloud Devices. Empty page state` |
 
 **Behavior verbs in titles:** Layout, Possible to…, Impossible to…, Canceling/Cancelling…, Filter tests by…, is displayed, is not displayed, can / cannot / can't.
@@ -102,36 +102,119 @@ Typical split for a new page or major feature:
 
 ### REST API endpoints
 
-Split systematically:
+Reference suites live in **`test-case-examples/API tests/`** (7 stories, 194 cases). Split by **endpoint shape** first, then apply the cross-cutting matrix below.
+
+#### By endpoint type
+
+| Type | Example story | Typical cases |
+|------|---------------|---------------|
+| **GET list** | EPMRPP-91805 | Happy path per role (Admin/Manager/Member); Admin without org assignment; empty array; 403 for disallowed role; missing/invalid/non-existent `org_id`; 401 (no/invalid/revoked token); default query params (`limit` 300, `offset` 0, `sort`, `order`); sort ASC/DESC; limit above/below 300; offset pagination; sort only by allowed field |
+| **POST create** | EPMRPP-96639 | Admin happy path + 201 response body; 403 non-Admin; 401 auth; mandatory field missing/empty; invalid email/length/password/full name; duplicate email; disallowed account types; enum variants (role, account type, activity); defaults when optional fields omitted; DB row check; login after create-with-password; security rules on password |
+| **PATCH JSON Patch** | EPMRPP-99095, EPMRPP-104599, EPMRPP-97280 | `replace` / `remove` ops on `name`, `slug`, `users`; role × assignment matrix (Admin/Manager/Member-editor/viewer); simultaneous multi-field or multi-user ops; each invalid `op` / `path` / `value`; missing path param; invalid/non-existent IDs; 400 field validation; 200 + success message + **DB verify** |
+| **POST search / filter** | EPMRPP-98512 | Admin filtered list; 403 non-Admin; 401 auth; one case per **filter_key** (uuid, email, full name, account type, instance role, activity, dates, org id, …); operator matrix (`EQ`, `IN`, …) where applicable; invalid filter key/operator; default limit 300; custom limit; default sort; custom sort field/direction; pagination |
+| **GET resource** | EPMRPP-97027 | Happy path per role; invalid/non-existent `user_id`; 401 auth; query params (e.g. `thumbnail`); deprecated endpoints (Swagger UI observation) |
+
+#### Cross-cutting matrix (all API types)
 
 | Category | Cases |
 |----------|--------|
-| **Happy path** | Each allowed role × org assignment variant (assigned to org+project, org only, admin not assigned, etc.) |
-| **Field validation** | Empty body field, short/long length, invalid characters, duplicate within org, valid UTF-8/spaces |
-| **Path/query params** | Missing org_id, project_id, invalid/non-integer/float/negative/special chars, non-existent IDs |
-| **Auth** | No token, invalid token, revoked token → 401 |
-| **Permissions** | 403 per disallowed role; org type variants (INTERNAL, EXTERNAL, PERSONAL, UPSA vs non-UPSA) |
-| **Business rules** | Slug lowercasing, special chars → `-`, project key unchanged, simultaneous name+slug update, duplicate request body keys |
-| **HTTP method/path** | Invalid operator, invalid path → 4xx |
+| **Happy path / permissions** | Each allowed role × assignment variant (org+project, org only, not assigned to org, viewer vs editor); **Possible to** / **can** in title |
+| **Denied access** | **Impossible to** / **cannot** / **Non-Admin user cannot**; 403 with `"You do not have enough permissions…"` |
+| **Auth** | No token, non-existent token, revoked token → 401 `"Invalid access token"`; often exercised via **Postman** |
+| **Path / ID validation** | Missing ID, invalid ID (letters), non-existent ID → 400 / 404 / 500 as per API |
+| **Body / patch validation** | Empty mandatory field, invalid length, invalid characters, empty `op`/`path`/`value`, invalid enum, duplicate within scope |
+| **Business rules** | Slug lowercasing, special chars → `-`, project key unchanged, defaults applied, login generated from email |
+| **Combined operations** | Update name + slug + user role + remove user in one PATCH body |
+| **Deprecation / migration** | Observe endpoint in Swagger before/after version upgrade |
 
-**API steps template:**
+#### API title shape
+
+`API. <Controller name>. <Behavior>` — **Controller** matches Swagger grouping (`Project Controller`, `Organization User Controller`, `User Controller`, `Organization-Projects Controller`, `File Storage Controller`). **Actor and assignment** are usually embedded in the behavior phrase, not a separate title segment:
+
+- `API. Project Controller. Admin that is assigned to the project can update project name`
+- `API. Organization User Controller. Member cannot get a list of users…`
+- `API. User Controller. Filtering users by email`
+- `API. User Controller. Default values are applied to non-required fields when they are not specified`
+
+**Behavior verbs:** **Possible to** / **Impossible to** / **can** / **cannot** / **gets** / **Filtering** / **Default parameter values** / **Sorting** / **Maximum N users are returned by default**.
+
+#### API preconditions
+
+API suites heavily use **`# `** lines. Common fixture blocks:
 
 ```
-Navigate to <Controller> ->
-Send the request: <METHOD> <path>
-{body if needed}
-and verify the response
-[Optional: Login as … and verify UI/DB]
+# 'Organization A' is created
+# 'ProjectA' is created in the 'Organization A'
+# User is assigned to 'Organization A' and 'ProjectA'
+# User has 'MEMBER' organization role at 'Organization A'
+# User has 'EDITOR' project role at 'ProjectA'
+# Admin is on the API Documentation page
 ```
 
-**API expected template:**
+Shorter POST suites may use **plain lines**: `Admin user exists on the instance`. Call out **token state** (`Authentication token doesn't exist`, token revoked) for 401 cases.
+
+#### API steps — two execution paths
+
+**1. Swagger UI (`"API Documentation"` page)** — default for happy path and most validation:
 
 ```
-Response code: <code>
-* Code: <code>
-* "<message>" message
-[Side effects: DB row, UI list, assignment removed, etc.]
+# Login as Admin -> Go to "API Documentation" page
+# Navigate to "<Controller>" -> <METHOD>/<path>
+# Fill '<param>' with …
+# Fill body of the request
+{code:java}
+[ … JSON … ]
+{code}
+# Send the request
+# Verify the response
+# Go to DB -> "public" schema -> "<table>" table:
+SELECT …
 ```
+
+**2. Postman** — typical for auth edge cases and malformed URLs:
+
+```
+# For the request in Postman fill the field 'Token', in Authorization tab, with non-existent token
+# Send the request via Postman GET/organizations/{org_id}/users
+# Verify the response
+```
+
+**PATCH body** — JSON Patch array; show inline or in `{code:java}`:
+
+```
+[
+  { "op": "replace", "path": "name", "value": "<updated_project_name>" }
+]
+```
+
+or `op: "remove"`, `path: "users"`, `value: [{ "id": <user_id> }]` / `value: null` (remove all).
+
+**POST body** — prefix with `Request body example:` and wrap in `{code:java}` (single-quoted JSON string is OK in examples).
+
+**Multi-scenario in one test:** extra numbered steps or `*Repeat test case for GITHUB/LDAP/SAML account type*` / `*Repeat test case with different sort parameters*`.
+
+#### API expected results
+
+Numbered lines map to **Steps** (`# ` lines count as 1…N). Typical success block:
+
+```
+5. The request is sent
+6. The response contains:
+* Code 200
+* "The update was completed successfully." message
+
+7. The name is updated in the DB
+```
+
+Error block:
+
+```
+3. The response contains:
+* Code: 403
+* "You do not have enough permissions. Access is denied" message
+```
+
+**201 create** — include full **Response example** in `{code:java}`. **GET list** — include paginated schema (`offset`, `limit`, `total_count`, `items[]`). **DB checks** — own step numbers after response (`There is *no* a record in the table`, role = *MEMBER*, *VIEWER*).
 
 ### Invitation / registration flows
 
@@ -149,41 +232,49 @@ Response code: <code>
 
 Three styles appear in examples — **pick one per test and stay consistent within that test**:
 
-1. **Plain lines** (no numbers, no trailing period):  
+1. **Plain lines** (no numbers, no trailing period) — common in UI and simple POST create:  
    `'Organization A' is created with at least one Project`  
-   `Administrator user is logged in to RP`
+   `Administrator user is logged in to RP`  
+   `Admin user exists on the instance`
 
-2. **`# ` numbered lines** (hash + space):  
-   `# 'Organization_1' has type 'internal'`  
-   `# Admin user is logged in`
+2. **`# ` numbered lines** (hash + space) — **default for API** (PATCH, GET list, remove user, role change):  
+   `# 'Organization A' is created`  
+   `# Admin is on the API Documentation page`
 
-3. **`1.` numbered list** (common in API suites):  
-   `1. 'Organization_1' has type 'internal'`
+3. **`1.` numbered list** — occasional (e.g. deprecation checks in Swagger):  
+   `1. ReportPortal instance is deployed with version 24.2 and lower`
 
-**Fixtures:** name orgs/projects `'Organization A'`, `'Project1'`, `'Organization_1'`; users `User_1`, `Admin user`, `Manager user`. Call out plugin installed, integration exists, launch data, Analytics ON/OFF, SSO toggles when relevant.
+**Fixtures:** name orgs/projects `'Organization A'`, `'ProjectA'`, `'Project1'`; spell out **org role** and **project role** (`'MEMBER'`, `'EDITOR'`, `'VIEWER'`, `'MANAGER'`). Use `*NOT*` / `*not*` for negative assignment. Call out plugin installed, integration exists, launch data, Analytics ON/OFF, SSO toggles when relevant.
 
 ---
 
 ## Steps
 
 - **UI:** Imperative — `Login to RP as Admin`, `Go to "All Users" page`, `Click on "Meatball" menu -> Select "Create user" option`, `Navigate to Organization settings > Integrations > Email Server`.
-- **Numbering:** Either **`1.` `2.` `3.`** (Markdown exports) or **`# `** lines (Jira-native); both appear in examples.
-- **API:** Controller name + HTTP method + path; include JSON body in steps when needed.
-- **Multi-scenario in one test:** extra steps numbered sequentially (e.g. invalid URL then invalid HTTPS host).
+- **Numbering:** UI often uses **`1.` `2.` `3.`**; **API** suites prefer **`# `** lines (count as steps 1…N for expected mapping). Do not end step text with a trailing period after the list marker.
+- **API (Swagger):** `Navigate to <Controller> -> <METHOD>/<path>` or `Login as Admin -> Navigate to Organization-Projects Controller -> PATCH/organizations/{org_id}/projects/{project_id}`; then `Fill … in the 'org_id' field`, `Send the request`, `Verify the response`.
+- **API (Postman):** `Send the request via Postman <METHOD>/<path>`; auth cases fill `'Token'` in Authorization tab.
+- **API body:** JSON in steps as raw array, or `Request body example:` + `{code:java}…{code}`; path placeholders `<org_id>`, `<user_id>`, `<project_id>`.
+- **API DB:** `Go to DB -> "public" schema -> "<table>" table:` + `SELECT …` as separate `# ` steps after the request.
+- **Multi-scenario in one test:** extra steps in the same case (e.g. send with invalid email, then without full name) or `*Repeat test case …*` footnote.
 
 **Role repetition** (instead of duplicating whole tests):
 
 ```
 *Repeat test case as Manager, Member-editor, Member-viewer*
-*Repeat test case as Member*
+*Repeat test case for GITHUB/LDAP/SAML account type*
+*Repeat test case with different sort parameters (e.g. email, instance_role, etc.)*
 ```
 
 ---
 
 ## Expected results
 
-- **Map line numbers to step numbers** that exist in *Steps* (gaps OK; do not exceed last step index).
+- **Map line numbers to step numbers** that exist in *Steps* (gaps OK; do not exceed last step index). For **`# `** steps, count top-level `# ` lines in order as 1…N.
 - **One step, many checks:** use step number once with sub-bullets (` - ` or `*`).
+- **API success:** `N. The request is sent` then `N. The response contains:` with `* Code 200` (or `201`) and quoted message; optional `{code:java}` response schema.
+- **API errors:** `* Code: 400` / `401` / `403` / `404` / `409` / `500` plus quoted or structured `message` / `errorCode`.
+- **API side effects:** separate numbered lines for DB (`The name is updated in the DB`, `There is *no* a record in the table`, project role = *VIEWER*).
 - **UI inventory:** quote control names; state **enabled** / **disabled** / **default**; success toasts in quotes (`'Integration successfully added'`).
 - **Layout cases:** nested bullets for header / sections / columns (`*`, `**`, `---` hierarchy as in examples).
 - **Skip dash for N/A step:** `-` when a step has no separate verification (see Create button behaviour case).
@@ -204,9 +295,15 @@ Three styles appear in examples — **pick one per test and stay consistent with
 | Plugin CRUD | EPMRPP-114952 | 32 | Per-field validation + API 403/409 |
 | Integrations page | EPMRPP-114379 | 41 | UI states + API list/pagination/errors + 2 GA |
 | API unassign user | EPMRPP-93348 | 30 | Role × org-type matrix + 401/403/404/400 |
-| API partial update | EPMRPP-99095 | 54 | Exhaustive field/path/auth/permission coverage |
+| **API PATCH project (name/slug)** | **API tests/EPMRPP-99095** | **54** | Field/path/auth/permission matrix; DB checks |
+| **API PATCH project (role change)** | **API tests/EPMRPP-104599** | **39** | JSON Patch `users`; self-role rules; combined ops |
+| **API PATCH remove user** | **API tests/EPMRPP-97280** | **23** | `remove` op; role matrix; bulk remove; DB |
+| **API GET org users list** | **API tests/EPMRPP-91805** | **18** | Pagination/sort/defaults + 401/403/404 |
+| **API POST create user** | **API tests/EPMRPP-96639** | **27** | Validation + enums + password rules + DB |
+| **API POST user search** | **API tests/EPMRPP-98512** | **25** | Per filter_key + operators + sort/limit |
+| **API GET avatar** | **API tests/EPMRPP-97027** | **8** | Small resource GET + deprecation |
 
-Use these counts as **density targets**: API stories tend toward **30–54** cases; focused UI toward **6–15**; full page + permissions **25–45**.
+Use these counts as **density targets**: exhaustive API endpoint stories **18–54** cases by surface area (small GET **~8**; list **~18**; PATCH matrix **40+**; POST create **~27**; filter API **~25**); focused UI **6–15**; full page + permissions **25–45**.
 
 ---
 
@@ -217,14 +314,22 @@ Use these counts as **density targets**: API stories tend toward **30–54** cas
 | Cancel modal | `Click on "Cancel" button / "X" button / "ESC" key` |
 | Meatball menu | `Click on "Meatball" menu -> Select "…" option` |
 | Mandatory empty | `"Field is required"` validation message; field highlighted in red |
-| Permission denied | `Code: 403 Forbidden`, `"You do not have enough permissions."` |
-| Invalid token | `Code: 401`, `"Invalid access token"` |
-| Success create | green bar / `'…successfully added'` message |
-| DB verify | `Go to DB -> … schema -> … table` |
+| API Swagger entry | `Login as Admin -> Go to "API Documentation" page` |
+| API navigate | `Navigate to "<Controller>" -> <METHOD>/<path>` |
+| API send / verify | `# Send the request` / `# Verify the response` |
+| PATCH success | `Code 200`, `"The update was completed successfully." message` |
+| POST create success | `Code: 201` + response example in `{code:java}` |
+| Permission denied | `Code: 403`, `"You do not have enough permissions. Access is denied" message` |
+| Invalid token | `Code: 401`, `"Invalid access token" message` |
+| Not found | `Code: 404`, `"User '<user_id>' not found."` / `"Organization '<id>' not found…"` |
+| Success create (UI) | green bar / `'…successfully added'` message |
+| DB verify | `Go to DB -> "public" schema -> "<table>" table:` + `SELECT …` |
 
 ---
 
 ## Source index
+
+### UI / mixed examples (repo root)
 
 | File | Story focus |
 |------|-------------|
@@ -237,9 +342,21 @@ Use these counts as **density targets**: API stories tend toward **30–54** cas
 | `EPMRPP-114952-test-cases.md` | Mobitru global integration CRUD |
 | `EPMRPP-114989-test-cases.md` | Cloud Devices page, Mobitru attachment |
 | `EPMRPP-93348-test-cases.md` | DELETE org user API, org types, UPSA |
-| `EPMRPP-99095-test-cases.md` | PATCH project name/slug API |
+| `EPMRPP-99095-test-cases.md` | PATCH project name/slug API (also in **API tests/**) |
 
-When generating new tests, **read this file first**, then open any **`EPMRPP-*-test-cases.md`** files that match the story shape for full step-level examples.
+### API-only examples (`API tests/`)
+
+| File | Story focus |
+|------|-------------|
+| `API tests/EPMRPP-99095-test-cases.md` | PATCH project `name` / `slug` — validation, permissions, DB |
+| `API tests/EPMRPP-104599-test-cases.md` | PATCH project user `role` — JSON Patch `users`, self-role rules |
+| `API tests/EPMRPP-97280-test-cases.md` | PATCH `remove` user from project — bulk, combined ops, DB |
+| `API tests/EPMRPP-91805-test-cases.md` | GET org users list — pagination, sort, defaults, auth |
+| `API tests/EPMRPP-96639-test-cases.md` | POST create user — validation, enums, password, DB |
+| `API tests/EPMRPP-98512-test-cases.md` | POST user search — filters, operators, sort/limit |
+| `API tests/EPMRPP-97027-test-cases.md` | GET user avatar — auth, invalid id, deprecation |
+
+When generating new tests, **read this file first**, then open matching files from the root and/or **`API tests/`** for full step-level examples. For new **REST-only** stories, start from the closest row in **API tests/**.
 
 ---
 
