@@ -241,6 +241,11 @@ async function main() {
 
   if (gitlabUrls.length > 0) {
     if (!gitlabApi || !gitlabToken) {
+      const missing = [
+        !gitlabApi && "GITLAB_API_URL (Actions variable vars.GITLAB_API_URL, e.g. https://git.epam.com/api/v4)",
+        !gitlabToken &&
+          "GITLAB_PERSONAL_ACCESS_TOKEN (Actions secret secrets.GITLAB_PERSONAL_ACCESS_TOKEN)",
+      ].filter(Boolean);
       failRequirementsRead(outPath, {
         storyKey,
         gaCoverageRequired: false,
@@ -248,8 +253,7 @@ async function main() {
         sources,
         gitlabUrls,
         gitlabOnlyDescription: gitlabOnly,
-        failureReason:
-          "Jira description links GitLab requirement file(s) but GITLAB_API_URL or GITLAB_PERSONAL_ACCESS_TOKEN is unset",
+        failureReason: `Jira description links GitLab requirement file(s) but missing: ${missing.join("; ")}`,
       });
     }
     for (const url of gitlabUrls) {
