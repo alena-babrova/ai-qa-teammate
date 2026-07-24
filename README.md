@@ -26,10 +26,12 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
-| `FIGMA_API_KEY` | No | Figma API token for the Figma MCP server |
-| `GITLAB_PERSONAL_ACCESS_TOKEN` | No* | GitLab personal access token for GitLab MCP and requirement extract |
+| `FIGMA_API_KEY` | No* | Figma API token for the Figma MCP server |
+| `GITLAB_PERSONAL_ACCESS_TOKEN` | No** | GitLab personal access token for GitLab MCP and requirement extract |
 
-\* **Required** when the User Story description is only a **`git.epam.com`** link (requirements live in GitLab; see **`scripts/extract-requirement-signals.js`**).
+\* **Required** when merged requirements (Jira + linked GitLab/Confluence) contain any **`figma.com`** URL—see **`scripts/extract-requirement-signals.js`** and **`figmaReadRequired`** in **`requirement-signals.json`**.
+
+\** **Required** when the User Story description is only a **`git.epam.com`** link (requirements live in GitLab; see **`scripts/extract-requirement-signals.js`**).
 
 **Repository variables** (**Variables** tab, not **Secrets**):
 
@@ -40,7 +42,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `CURSOR_AGENT_MODEL` | No | Default Cursor Agent model when the run does not pass one (see below) |
 | `GITLAB_API_URL` | No* | GitLab API base URL (e.g. `https://git.epam.com/api/v4`) |
 
-`CONFLUENCE_*`, **`FIGMA_API_KEY`**, and **`GITLAB_*`** are optional—when set, the agent can use those MCP servers for story-linked context. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**.
+`CONFLUENCE_*`, **`FIGMA_API_KEY`** (required for stories with Figma links), and **`GITLAB_*`** are optional when unused—when set, the agent can use those MCP servers for story-linked context. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**.
 
 **Cursor Agent model in CI:** **Run workflow** includes a **model** dropdown (default **`composer-2.5`**). **`repository_dispatch`** / Jira automation can send **`client_payload.cursor_model`**; optional variable **`CURSOR_AGENT_MODEL`** applies when neither is set.
 

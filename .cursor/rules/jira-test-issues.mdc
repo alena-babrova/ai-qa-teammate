@@ -107,13 +107,17 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ### When Figma links appear
 
-- Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers.
+- Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers. URLs may appear only in **fetched** GitLab or Confluence requirement files—not only in the Jira **`description`**.
+- **`figmaReadRequired`:** When **`requirement-signals.json`** has **`figmaReadRequired`: true** (CI: **`scripts/extract-requirement-signals.js`** after merging Jira + linked specs) **or** you discover any **`figma.com`** URL in loaded requirements, Figma reads are **mandatory**—not optional.
 - Use tools from the **Figma MCP** server (**`acuvity-mcp-server-figma`** in **`.cursor/mcp.json`** — **`docker.io/acuvity/mcp-server-figma`** via **`${CONTAINER_CMD}`** in CI). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
 - **Minimize Figma API calls (Cursor / CI — reduces 429 rate limits):**
   - **Collect first:** Parse the story once; list **unique** file keys (and node ids if present). **Deduplicate** identical URLs.
   - **Prefer fewer, wider reads:** If a tool can return a **whole file** or **multiple nodes in one call**, use that instead of many small calls. **Do not** enumerate every frame or component “to be thorough.”
   - **One success per file key:** After a call returns usable data for a file, **do not** call Figma again for the same file key unless the first response was empty or clearly incomplete.
   - **No exploration:** **Do not** use Figma MCP to browse, search, or open files **not** linked from the story text.
+- **No Figma visibility → no tests:** When **`figmaReadRequired`** applies, you **must** successfully read **every** required file key via Figma MCP **before** authoring tests or syncing Jira **Test** issues. If Figma cannot be read (auth, 403, 429, timeout, empty/unusable payload, MCP unavailable): **hard stop**—do **not** write **`tests.json`**, do **not** write **`meta.json`** with non-empty **`mcpCreatedKeys`**, do **not** **`jira_create_issue`** / **`jira_update_issue`**, do **not** post the Test Design completion comment. Write **`generated/jira-tests/<STORY_KEY>/figma-read-failure.json`** with **`figmaReadRequired`**, **`figmaFileKeys`**, and **`failureReason`** (no secrets). Let CI fail.
+- **No invented UI:** When **`figmaReadRequired`** applies, do **not** invent control names, breadcrumbs, meatball menus, modal copy, or layout in steps/expected from Jira/GitLab/Gherkin alone. UI inventory must come from **successful** Figma MCP reads plus explicit written AC (e.g. button labels stated in the spec). **GA.** / **API.** cases still follow their specs when Figma is unrelated.
+- **Success:** Include **`figmaFileKeysRead`** in **`meta.json`**—array of every required Figma **file key** successfully read via MCP (same set as **`requirement-signals.json`** **`figmaFileKeys`**). **`scripts/verify-mcp-jira.js`** enforces the Figma gate when **`figmaReadRequired`** is true.
 
 ### When GitLab (`git.epam.com`) links appear
 
@@ -124,7 +128,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ### Nested authoritative links (from fetched specs)
 
-After a **successful** read of a story-linked **GitLab** or **Confluence** file, **also read** distinct **Confluence** or **Figma** URLs that appear **in that document** when they are cited as authoritative for **Analytics (GA4)** or acceptance criteria (e.g. “Source: GA4 – Plugins … parameters on that page are authoritative”). **One read per distinct URL**; same minimization as above—not open-ended repo or space crawling.
+After a **successful** read of a story-linked **GitLab** or **Confluence** file, **also read** distinct **Confluence** or **Figma** URLs that appear **in that document** when they are cited as authoritative for **Analytics (GA4)**, **acceptance criteria**, or **design** (e.g. **Design / Figma** tables, UI mockup links). **One read per distinct URL**; same minimization as above—not open-ended repo or space crawling.
 
 ### If there are no such links
 
@@ -132,8 +136,9 @@ After a **successful** read of a story-linked **GitLab** or **Confluence** file,
 
 ### If links exist but MCP read fails
 
-- Optional context only: **do not** fail the whole run or treat this as a failed **Pre-generation MCP gate**. Complete tests from Jira text. **Do not** mention Confluence, Figma, or GitLab read failures in the **completion comment** on the **Test Design** Sub-task after tests are generated (**Test Design sub-task comment after successful test generation**); **do not** comment those on **`STORY_KEY`**. **Never** put tokens or secrets in **`generated/`** or repo files.
-- **Streamed / assistant-visible output (CI log and IDE):** When a Confluence, Figma, or GitLab MCP call fails—**including HTTP 429**, rate limits, timeouts, or auth errors—**do not** narrate the failure in your reply. **Do not** quote status codes (**`429`**, **`403`**, etc.), provider error payloads, or hedging lines such as *“Figma returned 429; continuing from Jira only”* / *“Confluence unavailable; using Jira only”*. Proceed with the next useful step (e.g. Jira MCP) **without** announcing that you are falling back or why linked specs were skipped.
+- **Figma (mandatory when linked):** When **`figmaReadRequired`** applies (see **When Figma links appear**), a failed or skipped Figma MCP read is a **failed run**—follow **No Figma visibility → no tests** above. **Do not** complete tests from Jira/GitLab text alone.
+- **Confluence / GitLab (optional on failure):** Optional context only—**do not** fail the whole run or treat this as a failed **Pre-generation MCP gate** for Confluence/GitLab alone. Complete tests from Jira text when only those reads fail. **Do not** mention Confluence or GitLab read failures in the **completion comment** on the **Test Design** Sub-task after tests are generated (**Test Design sub-task comment after successful test generation**); **do not** comment those on **`STORY_KEY`**. **Never** put tokens or secrets in **`generated/`** or repo files.
+- **Streamed / assistant-visible output (CI log and IDE):** When a **Confluence** or **GitLab** MCP call fails—**including HTTP 429**, rate limits, timeouts, or auth errors—**do not** narrate the failure in your reply. **Do not** quote status codes (**`429`**, **`403`**, etc.), provider error payloads, or hedging lines such as *“Confluence unavailable; using Jira only”*. Proceed with the next useful step (e.g. Jira MCP) **without** announcing that you are falling back or why linked specs were skipped. **Figma** failures under **`figmaReadRequired`** should result in **stop** (write **`figma-read-failure.json`**, no tests)—CI logs will show verify failure; do not post a success completion comment.
 
 ## Jira fetch required (not the same as empty story)
 
@@ -178,9 +183,12 @@ After MCP **creates and/or updates** Tests **or** when **`tests`** is empty:
 ```json
 {
   "jiraPublish": "mcp",
-  "mcpCreatedKeys": ["PROJ-201", "PROJ-202"]
+  "mcpCreatedKeys": ["PROJ-201", "PROJ-202"],
+  "figmaFileKeysRead": ["PxNk9h6CS9Y4Mxcl2fS9HF"]
 }
 ```
+
+**`figmaFileKeysRead`:** when **`requirement-signals.json`** has **`figmaReadRequired`: true**, required on successful runs—unique Figma **file keys** successfully read via MCP (must match **`figmaFileKeys`** in signals). Omit when Figma was not required.
 
 **`mcpCreatedKeys`:** same **length** and **order** as **`tests`** (use **`[]`** if **`tests`** is **`[]`**). Each entry is the Jira **Test issue key** for that **`tests[]`** row after sync—**updated** existing issues and **newly created** issues both count (the name **`mcpCreatedKeys`** is historical). **`scripts/verify-mcp-jira.js`** enforces length and valid keys in CI.
 

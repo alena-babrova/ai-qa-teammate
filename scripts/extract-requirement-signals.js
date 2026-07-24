@@ -11,6 +11,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createJiraClient } from "./jira-client.js";
+import { extractFigmaSignals, figmaRestPreflightFile } from "./figma-signals.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -283,6 +284,57 @@ async function main() {
   }
 
   const { gaCoverageRequired, gaHints } = detectGaSignals(combined);
+  const { figmaUrls, figmaFileKeys, figmaReadRequired } = extractFigmaSignals(combined);
+
+  const figmaToken = process.env.FIGMA_API_KEY?.trim();
+
+  if (figmaReadRequired) {
+    if (!figmaToken) {
+      const payload = {
+        storyKey,
+        gaCoverageRequired,
+        gaHints,
+        sources,
+        requirementsReadFailed: true,
+        failureReason:
+          "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot preflight or run Figma MCP",
+        gitlabUrls,
+        gitlabOnlyDescription: gitlabOnly,
+        figmaReadRequired: true,
+        figmaUrls,
+        figmaFileKeys,
+      };
+      fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+      console.error(`::error::${payload.failureReason}`);
+      console.error(payload.failureReason);
+      process.exit(1);
+    }
+    for (const fileKey of figmaFileKeys) {
+      try {
+        await figmaRestPreflightFile(figmaToken, fileKey);
+        sources.push(`figma:preflight:${fileKey}`);
+      } catch (e) {
+        const msg = e.message || String(e);
+        const payload = {
+          storyKey,
+          gaCoverageRequired,
+          gaHints,
+          sources,
+          requirementsReadFailed: true,
+          failureReason: `Figma preflight failed: ${msg}`,
+          gitlabUrls,
+          gitlabOnlyDescription: gitlabOnly,
+          figmaReadRequired: true,
+          figmaUrls,
+          figmaFileKeys,
+        };
+        fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+        console.error(`::error::${payload.failureReason}`);
+        console.error(payload.failureReason);
+        process.exit(1);
+      }
+    }
+  }
 
   const payload = {
     storyKey,
@@ -292,11 +344,14 @@ async function main() {
     requirementsReadFailed: gitlabFetchFailed && gitlabOnly,
     gitlabUrls,
     gitlabOnlyDescription: gitlabOnly,
+    figmaReadRequired,
+    figmaUrls,
+    figmaFileKeys,
   };
 
   fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   console.log(
-    `Wrote ${outPath} (gaCoverageRequired=${gaCoverageRequired}, hints=${gaHints.join(",") || "none"})`,
+    `Wrote ${outPath} (gaCoverageRequired=${gaCoverageRequired}, figmaReadRequired=${figmaReadRequired}, hints=${gaHints.join(",") || "none"})`,
   );
 
   if (payload.requirementsReadFailed) {

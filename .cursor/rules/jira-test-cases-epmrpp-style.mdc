@@ -44,6 +44,7 @@ Whenever you **author** manual test cases from a Jira story (Markdown or **`test
 - **Several checks for one step:** Put **one** step number and group detail under it using sub-bullets (` - ` or `*`), e.g. after step 4 “Observe the modal”, use **`4.`** with bullets for *Name* field, *Cancel*, *Create*, close icon — **not** new top-level `5.`, `6.`, `7.`.
 - **Bullets:** use ` - ` (space-hyphen-space) **or** leading `*` lines (`* Team`) depending on reference; stay consistent within one test case.
 - UI inventory: control names in **double quotes**, **enabled** / **disabled** / **default**, success toasts (e.g. green bar text in quotes).
+- **Figma-linked stories:** When requirements include **`figma.com`** URLs and **`figmaReadRequired`** applies (**`jira-test-issues.mdc`**), do **not** author UI control/layout inventory in expected results unless Figma was **successfully** read via MCP. When Figma was read, prefer design-backed control names for UI cases; do not invent breadcrumbs, menus, or chrome not grounded in design + explicit AC.
 
 ## GA tests
 

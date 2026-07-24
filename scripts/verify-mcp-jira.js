@@ -14,6 +14,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { validateGaCoverage } from "./verify-ga-coverage.js";
+import { validateFigmaRead } from "./verify-figma-read.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -88,7 +89,14 @@ function main() {
     }
   }
 
+  const canonicalDir = path.join(root, "generated", "jira-tests", storyKey);
+
   if (!outDir) {
+    const figmaErr = validateFigmaRead(canonicalDir, null, null);
+    if (figmaErr) {
+      console.error(figmaErr);
+      process.exit(1);
+    }
     const tried = dirKeys.map((k) =>
       path.join(root, "generated", "jira-tests", k, "tests.json"),
     );
@@ -133,6 +141,15 @@ function main() {
       console.error(emptyErr);
       process.exit(1);
     }
+    const figmaEmptyErr = validateFigmaRead(
+      fs.existsSync(path.join(canonicalDir, "requirement-signals.json")) ? canonicalDir : outDir,
+      manifest,
+      metaEmpty,
+    );
+    if (figmaEmptyErr) {
+      console.error(figmaEmptyErr);
+      process.exit(1);
+    }
     console.log(
       "OK: 0 tests (story had no testable description/AC content); meta.json mcpCreatedKeys is [].",
     );
@@ -168,7 +185,16 @@ function main() {
     process.exit(1);
   }
 
-  const canonicalDir = path.join(root, "generated", "jira-tests", storyKey);
+  const figmaErr = validateFigmaRead(
+    fs.existsSync(path.join(canonicalDir, "requirement-signals.json")) ? canonicalDir : outDir,
+    manifest,
+    meta,
+  );
+  if (figmaErr) {
+    console.error(figmaErr);
+    process.exit(1);
+  }
+
   const gaErr = validateGaCoverage(
     fs.existsSync(path.join(canonicalDir, "requirement-signals.json"))
       ? canonicalDir
