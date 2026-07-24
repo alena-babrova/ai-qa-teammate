@@ -33,6 +33,7 @@ Before authoring **`tests.json`**, Jira Tests, or Markdown:
 | `EPMRPP-114989-test-cases.md` | Project-level plugin page, empty vs configured states, device list |
 | `EPMRPP-93348-test-cases.md` | REST API endpoint, role/org-type permission matrix, error codes |
 | `EPMRPP-99095-test-cases.md` | REST API partial update, field validation, slug/name rules, auth errors |
+| `GA tests/GA-analytics-test-cases.md` | Google Analytics — `collect` payload, GA ON/OFF pairs, scope in title (Instance / Organization / Project level) |
 
 ## How format maps to deliverables
 
@@ -119,7 +120,7 @@ Use when the user **explicitly** asks to mirror **existing Jira `Test`** issues 
 
 - Map story **acceptance criteria** and **numbered / Gherkin** scenarios to **discrete** test cases; split when an explicit reference suite (above) would split.
 - **Localization / languages:** Do **not** add cases focused on translations, language switching, locale-only formatting, RTL, or multilingual copy—unless the user **explicitly** asks.
-- **Google Analytics / telemetry:** Include GA-style cases **only** if the story or user explicitly requires them (or a reference suite you are mirroring consistently includes them).
+- **Google Analytics / telemetry:** **Require** **`GA.`** tests when **any** loaded requirements source (Jira body/AC fields, **successfully fetched** GitLab/Confluence/Figma content) includes an **Analytics (GA4)** section, analytics acceptance checklist, GA4 event numbering, or **`collect`** / **`page_view`** telemetry AC. Linked specs count as part of the story—not only Jira plain text. Follow **`test-case-examples/CONTEXT.md`**: at minimum one **GA ON** and one **GA OFF** pair (see **`test-case-examples/GA tests/GA-analytics-test-cases.md`**). Use **Minor** priority for telemetry-only cases unless the story is GA-only. **Respect out of scope:** do not add GA for actions explicitly deferred to another user story (e.g. button clicks covered elsewhere).
 - Respect **out of scope** in the story: do **not** add API/backend contract tests if the story says there is **no** backend/API—unless you are mirroring a reference suite **and** the user asked for that mirroring.
 - Add **edge / regression** cases when the story implies them (persistence, permissions, multiple tabs, large viewport, etc.).
 
@@ -142,7 +143,8 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
 - [ ] **Reference context:** **`test-case-examples/CONTEXT.md`** read; relevant **`EPMRPP-*-test-cases.md`** examples consulted for similar story shape.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
-- [ ] Confluence / Figma / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story). On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
+- [ ] Confluence / Figma / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story); fetch **nested** authoritative GA4/Confluence links cited inside fetched specs when needed. On MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output.
+- [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** tests and align **`collect`** payload with KB/spec (**`prompts/ci-generate-tests.md`**).
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] **Optional Jira investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, and/or library JQL—**read-only**, small sample only; skipped when not needed.
 - [ ] **User-requested `Test` mirror:** fetched only when the user explicitly asked; **zero linked Tests** handled without inventing a suite.

@@ -123,6 +123,11 @@ jobs:
       - name: "2. Generate — prepare output directory"
         run: mkdir -p "generated/jira-tests/${STORY_KEY}"
 
+      - name: "2. Generate — extract requirement signals (GA / linked specs)"
+        env:
+          STORY_KEY: ${{ env.STORY_KEY }}
+        run: node scripts/extract-requirement-signals.js
+
       - name: "2. Generate — run Cursor Agent (headless)"
         env:
           CI: "true"

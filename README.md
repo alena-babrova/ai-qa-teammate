@@ -27,7 +27,9 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
 | `FIGMA_API_KEY` | No | Figma API token for the Figma MCP server |
-| `GITLAB_PERSONAL_ACCESS_TOKEN` | No | GitLab personal access token for GitLab MCP |
+| `GITLAB_PERSONAL_ACCESS_TOKEN` | No* | GitLab personal access token for GitLab MCP and requirement extract |
+
+\* **Required** when the User Story description is only a **`git.epam.com`** link (requirements live in GitLab; see **`scripts/extract-requirement-signals.js`**).
 
 **Repository variables** (**Variables** tab, not **Secrets**):
 
@@ -36,7 +38,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 | `JIRA_URL` | Yes | Jira instance URL (required for CI) |
 | `CONFLUENCE_URL` | No | Confluence instance URL for Confluence MCP |
 | `CURSOR_AGENT_MODEL` | No | Default Cursor Agent model when the run does not pass one (see below) |
-| `GITLAB_API_URL` | No | GitLab API base URL (e.g. `https://git.epam.com/api/v4`) |
+| `GITLAB_API_URL` | No* | GitLab API base URL (e.g. `https://git.epam.com/api/v4`) |
 
 `CONFLUENCE_*`, **`FIGMA_API_KEY`**, and **`GITLAB_*`** are optional—when set, the agent can use those MCP servers for story-linked context. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**.
 

@@ -1,6 +1,6 @@
 # EPMRPP test-case generation context
 
-Derived from all files in **`test-case-examples/`** and **`test-case-examples/API tests/`** (472 test cases across 16 stories; **194** API-only cases in **`API tests/`**). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in **`EPMRPP-*-test-cases.md`** (root) and **`API tests/EPMRPP-*-test-cases.md`** for deep reference — prefer **`API tests/`** when authoring REST coverage.
+Derived from all files in **`test-case-examples/`**, **`test-case-examples/API tests/`**, and **`test-case-examples/GA tests/`** (472+ test cases across UI/API/GA reference suites; **194** API-only cases in **`API tests/`**). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in **`EPMRPP-*-test-cases.md`** (root), **`API tests/EPMRPP-*-test-cases.md`** for REST, and **`GA tests/GA-analytics-test-cases.md`** for Google Analytics — prefer **`API tests/`** when authoring REST coverage and **`GA tests/`** when the story is GA-only or telemetry-heavy.
 
 ---
 
@@ -65,6 +65,22 @@ Typical split for a new page or major feature:
 6. **Permissions** — separate case per role × scenario; use **Permissions.** segment in title.
 7. **Persistence** — localStorage, reload, tab switch (when feature implies it).
 8. **GA** — event on action + same action when Analytics OFF (pair).
+
+### Google Analytics (`collect` payload)
+
+Reference suite: **`GA tests/GA-analytics-test-cases.md`**. Split and wording patterns from Jira GA Tests:
+
+| Pattern | When | Title / steps hint |
+|---------|------|-------------------|
+| **Menu / meatball option** | Event on selecting an option (before confirm) | `icon_name` in payload (e.g. `delete`, `provide_admin_rights`) |
+| **Modal confirm** | Click primary button in modal | `modal:` + `element_name:` (e.g. `delete_user`, `create_user`) |
+| **Page open** | First paint / navigation | `en: page_view` + `place:` (e.g. `cloud_device_empty_state`) |
+| **In-page control** | Button or link on a page | `category`, `place`, `element_name` or `link_name` (Promo / cloud_version) |
+| **Sidebar hover** | Collapsed sidebar expand + click | `category: sidebar`, `place: sidebar_hover`, `icon_name: user_control`; scope in title (Instance / Organization / Project level) |
+| **GA OFF** | Server Settings Analytics disabled | Preconditions `GA is OFF`; same steps as ON case; expected: no `collect` request (often multiple step numbers in one test) |
+| **Multi-action in one test** | Several clicks each with own payload | Repeat “Check … collect” after each action; expected lines `4.`, `6.`, `8.` or `4, 6.` for OFF |
+
+Always pair **GA is sent** cases with **GA OFF** (or **Set GA OFF and verify…**) when the story adds new telemetry. Priority is often **Minor** (telemetry-only) unless the story is GA-only.
 
 ### Modal CRUD (e.g. Create user, Create integration)
 
@@ -344,6 +360,12 @@ Use these counts as **density targets**: exhaustive API endpoint stories **18–
 | `EPMRPP-93348-test-cases.md` | DELETE org user API, org types, UPSA |
 | `EPMRPP-99095-test-cases.md` | PATCH project name/slug API (also in **API tests/**) |
 
+### GA analytics examples (`GA tests/`)
+
+| File | Story focus |
+|------|-------------|
+| `GA tests/GA-analytics-test-cases.md` | `collect` payload checks — Instance / Org / Project scope, page_view, GA OFF pairs, Promo `link_name` |
+
 ### API-only examples (`API tests/`)
 
 | File | Story focus |
@@ -356,7 +378,7 @@ Use these counts as **density targets**: exhaustive API endpoint stories **18–
 | `API tests/EPMRPP-98512-test-cases.md` | POST user search — filters, operators, sort/limit |
 | `API tests/EPMRPP-97027-test-cases.md` | GET user avatar — auth, invalid id, deprecation |
 
-When generating new tests, **read this file first**, then open matching files from the root and/or **`API tests/`** for full step-level examples. For new **REST-only** stories, start from the closest row in **API tests/**.
+When generating new tests, **read this file first**, then open matching files from the root, **`GA tests/`**, and/or **`API tests/`** for full step-level examples. For new **REST-only** stories, start from the closest row in **API tests/**. For **GA.** stories or AC that mandate telemetry, start from **`GA tests/GA-analytics-test-cases.md`**.
 
 ---
 

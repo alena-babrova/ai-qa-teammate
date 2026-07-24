@@ -13,6 +13,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { validateGaCoverage } from "./verify-ga-coverage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -164,6 +165,18 @@ function main() {
     console.error(
       "All Test issues must be synced via Jira MCP (create/update); REST publish is not used.",
     );
+    process.exit(1);
+  }
+
+  const canonicalDir = path.join(root, "generated", "jira-tests", storyKey);
+  const gaErr = validateGaCoverage(
+    fs.existsSync(path.join(canonicalDir, "requirement-signals.json"))
+      ? canonicalDir
+      : outDir,
+    manifest,
+  );
+  if (gaErr) {
+    console.error(gaErr);
     process.exit(1);
   }
 

@@ -35,7 +35,7 @@ Edit the table for your instance.
 
 - **Anchor on the User Story:** Use **`jira_get_issue(STORY_KEY)`** **`priority`** as the **baseline** when assigning each Test’s priority (often match the story for **happy-path / primary AC** cases; **not** every case must equal the story—see below).
 - **Raise** when the case guards **release-blocking**, **compliance**, **security**, **billing**, **data loss/corruption**, **permissions for sensitive actions**, or **high regression risk** on a core flow—even if the story priority looks lower, if the scenario is “if this fails, we ship a serious bug,” reflect that.
-- **Lower** for **secondary** UX, **edge cases** that rarely fire, **cosmetic** or **copy** checks, **nice-to-have** telemetry-only (e.g. GA) cases, or **optional** paths called out as low impact in the story—without under-stating real risk.
+- **Lower** for **secondary** UX, **edge cases** that rarely fire, **cosmetic** or **copy** checks, **nice-to-have** telemetry-only (e.g. GA) cases, or **optional** paths called out as low impact in the story—without under-stating real risk. **Lowering priority does not mean omitting GA tests** when acceptance criteria or linked specs require Analytics/GA4 coverage.
 - **Vary across tests** in the same story: primary AC vs edge vs permission matrix rows may legitimately differ (e.g. **Critical** for core create flow, **Minor** for a rare error message).
 - **On `jira_update_issue`** when refreshing linked Tests, **re-evaluate** **`priority`** if the story priority or scenario mix changed—include **`priority`** in the updated fields (**Sync with existing Jira Tests**).
 
@@ -76,7 +76,7 @@ Whenever test generation runs against a story that may already have **Test** iss
 
 ## Cursor Agent CLI (headless)
 
-- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Style:** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**; **style context:** **`test-case-examples/CONTEXT.md`** + **`test-case-examples/`** full examples; **very optional coverage investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, then Test library JQL if needed (skill → **Investigating coverage in Jira**). MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
+- Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Before** the agent, CI runs **`scripts/extract-requirement-signals.js`** → **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** (GA / linked-spec signals). **After** the agent, **`scripts/verify-mcp-jira.js`** enforces GA coverage when **`gaCoverageRequired`** is true. **Style:** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**; **style context:** **`test-case-examples/CONTEXT.md`** + **`test-case-examples/`** full examples; **very optional coverage investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, then Test library JQL if needed (skill → **Investigating coverage in Jira**). MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
 
 ## Always use **STORY_KEY** — verify first
 
@@ -121,6 +121,10 @@ Whenever test generation runs against a story that may already have **Test** iss
 - Use tools from the **GitLab MCP** server (**`gitlab`** in **`.cursor/mcp.json`** — **`docker.io/mcp/gitlab:latest`** via **`${CONTAINER_CMD}`** in CI). Exact tool names depend on the server build—use whatever read tools the session exposes to retrieve **file or document content** (and minimal supporting metadata if required) for resources **referenced by the story link**.
 - **Read-only:** pull content needed for acceptance criteria, flows, or copy **referenced by the link**. **Do not** invent details that exist only in the linked GitLab resource without fetching it when the link is present and MCP is available.
 - **Minimize calls:** Deduplicate URLs; **one** successful read per **distinct** linked URL unless the first response is empty or clearly incomplete. **Do not** list entire repositories, walk unrelated directory trees, search broadly, or open projects/files **not** linked from the story (same spirit as Figma **no exploration**).
+
+### Nested authoritative links (from fetched specs)
+
+After a **successful** read of a story-linked **GitLab** or **Confluence** file, **also read** distinct **Confluence** or **Figma** URLs that appear **in that document** when they are cited as authoritative for **Analytics (GA4)** or acceptance criteria (e.g. “Source: GA4 – Plugins … parameters on that page are authoritative”). **One read per distinct URL**; same minimization as above—not open-ended repo or space crawling.
 
 ### If there are no such links
 
