@@ -31,7 +31,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 
 \* **Required** when merged requirements (Jira + linked GitLab/Confluence) contain any **`figma.com`** URL—see **`scripts/extract-requirement-signals.js`** and **`figmaReadRequired`** in **`requirement-signals.json`**.
 
-\** **Required** when the User Story description is only a **`git.epam.com`** link (requirements live in GitLab; see **`scripts/extract-requirement-signals.js`**).
+\** **Required** when the User Story description contains any **`git.epam.com`** `/-/blob/` requirements link (see **`scripts/extract-requirement-signals.js`**).
 
 **Repository variables** (**Variables** tab, not **Secrets**):
 

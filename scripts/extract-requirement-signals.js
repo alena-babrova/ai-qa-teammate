@@ -4,7 +4,8 @@
  * Writes generated/jira-tests/<STORY_KEY>/requirement-signals.json for CI agent + verify.
  *
  * Env: STORY_KEY, JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN
- * Optional: GITLAB_API_URL, GITLAB_PERSONAL_ACCESS_TOKEN, CONFLUENCE_URL, CONFLUENCE_API_TOKEN, CONFLUENCE_USER_EMAIL
+ * Optional: CONFLUENCE_URL, CONFLUENCE_API_TOKEN, CONFLUENCE_USER_EMAIL
+ * Required when Jira description contains git.epam.com /-/blob/ links: GITLAB_API_URL, GITLAB_PERSONAL_ACCESS_TOKEN
  */
 
 import fs from "fs";
@@ -187,6 +188,20 @@ function isGitLabOnlyDescription(text) {
   return withoutUrls === "";
 }
 
+/**
+ * @param {string} outPath
+ * @param {Record<string, unknown>} payload
+ */
+function failRequirementsRead(outPath, payload) {
+  const body = { requirementsReadFailed: true, ...payload };
+  fs.writeFileSync(outPath, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+  const reason =
+    typeof body.failureReason === "string" ? body.failureReason : "Requirements read failed";
+  console.error(`::error::${reason}`);
+  console.error(reason);
+  process.exit(1);
+}
+
 async function main() {
   const storyKey = process.env.STORY_KEY?.trim() || process.argv[2]?.trim();
   const baseUrl = process.env.JIRA_URL?.replace(/\/+$/, "");
@@ -223,45 +238,35 @@ async function main() {
 
   const gitlabUrls = uniqueGitLabBlobUrls(jiraText);
   const gitlabOnly = isGitLabOnlyDescription(jiraText);
-  let gitlabFetchFailed = false;
 
   if (gitlabUrls.length > 0) {
     if (!gitlabApi || !gitlabToken) {
-      if (gitlabOnly) {
-        const payload = {
+      failRequirementsRead(outPath, {
+        storyKey,
+        gaCoverageRequired: false,
+        gaHints: [],
+        sources,
+        gitlabUrls,
+        gitlabOnlyDescription: gitlabOnly,
+        failureReason:
+          "Jira description links GitLab requirement file(s) but GITLAB_API_URL or GITLAB_PERSONAL_ACCESS_TOKEN is unset",
+      });
+    }
+    for (const url of gitlabUrls) {
+      try {
+        const body = await fetchGitLabRawFile(gitlabApi, gitlabToken, url);
+        combined += `\n\n${body}`;
+        sources.push(`gitlab:${url}`);
+      } catch (e) {
+        failRequirementsRead(outPath, {
           storyKey,
           gaCoverageRequired: false,
           gaHints: [],
           sources,
-          requirementsReadFailed: true,
-          failureReason: "Jira description is GitLab-only but GITLAB_API_URL or GITLAB_PERSONAL_ACCESS_TOKEN is unset",
-        };
-        fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-        console.error(payload.failureReason);
-        process.exit(1);
-      }
-    } else {
-      for (const url of gitlabUrls) {
-        try {
-          const body = await fetchGitLabRawFile(gitlabApi, gitlabToken, url);
-          combined += `\n\n${body}`;
-          sources.push(`gitlab:${url}`);
-        } catch (e) {
-          gitlabFetchFailed = true;
-          console.error(e.message || e);
-          if (gitlabOnly) {
-            const payload = {
-              storyKey,
-              gaCoverageRequired: false,
-              gaHints: [],
-              sources,
-              requirementsReadFailed: true,
-              failureReason: `Failed to read GitLab requirements: ${e.message || e}`,
-            };
-            fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-            process.exit(1);
-          }
-        }
+          gitlabUrls,
+          gitlabOnlyDescription: gitlabOnly,
+          failureReason: `Failed to read GitLab requirements: ${e.message || e}`,
+        });
       }
     }
   }
@@ -290,12 +295,11 @@ async function main() {
 
   if (figmaReadRequired) {
     if (!figmaToken) {
-      const payload = {
+      failRequirementsRead(outPath, {
         storyKey,
         gaCoverageRequired,
         gaHints,
         sources,
-        requirementsReadFailed: true,
         failureReason:
           "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot preflight or run Figma MCP",
         gitlabUrls,
@@ -303,11 +307,7 @@ async function main() {
         figmaReadRequired: true,
         figmaUrls,
         figmaFileKeys,
-      };
-      fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-      console.error(`::error::${payload.failureReason}`);
-      console.error(payload.failureReason);
-      process.exit(1);
+      });
     }
     for (const fileKey of figmaFileKeys) {
       try {
@@ -315,23 +315,18 @@ async function main() {
         sources.push(`figma:preflight:${fileKey}`);
       } catch (e) {
         const msg = e.message || String(e);
-        const payload = {
+        failRequirementsRead(outPath, {
           storyKey,
           gaCoverageRequired,
           gaHints,
           sources,
-          requirementsReadFailed: true,
           failureReason: `Figma preflight failed: ${msg}`,
           gitlabUrls,
           gitlabOnlyDescription: gitlabOnly,
           figmaReadRequired: true,
           figmaUrls,
           figmaFileKeys,
-        };
-        fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-        console.error(`::error::${payload.failureReason}`);
-        console.error(payload.failureReason);
-        process.exit(1);
+        });
       }
     }
   }
@@ -341,7 +336,7 @@ async function main() {
     gaCoverageRequired,
     gaHints,
     sources,
-    requirementsReadFailed: gitlabFetchFailed && gitlabOnly,
+    requirementsReadFailed: false,
     gitlabUrls,
     gitlabOnlyDescription: gitlabOnly,
     figmaReadRequired,
@@ -353,10 +348,6 @@ async function main() {
   console.log(
     `Wrote ${outPath} (gaCoverageRequired=${gaCoverageRequired}, figmaReadRequired=${figmaReadRequired}, hints=${gaHints.join(",") || "none"})`,
   );
-
-  if (payload.requirementsReadFailed) {
-    process.exit(1);
-  }
 }
 
 main().catch((e) => {
