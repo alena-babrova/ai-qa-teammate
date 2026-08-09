@@ -13,7 +13,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createJiraClient } from "./jira-client.js";
-import { extractFigmaSignals, figmaRestPreflightFile } from "./figma-signals.js";
+import { extractFigmaSignals } from "./figma-signals.js";
 import {
   hostFromUrl,
   gitLabBlobUrls,
@@ -258,45 +258,21 @@ async function main() {
 
   const figmaToken = process.env.FIGMA_API_KEY?.trim();
 
-  if (figmaReadRequired) {
-    if (!figmaToken) {
-      failRequirementsRead(outPath, {
-        storyKey,
-        gaCoverageRequired,
-        gaHints,
-        sources,
-        failureReason:
-          "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot preflight or run Figma MCP",
-        gitlabUrls,
-        gitlabOnlyDescription: gitlabOnly,
-        figmaReadRequired: true,
-        figmaUrls,
-        figmaFileKeys,
-        figmaNodeIdsByFileKey,
-      });
-    }
-    for (const fileKey of figmaFileKeys) {
-      const nodeIds = figmaNodeIdsByFileKey[fileKey] ?? [];
-      try {
-        await figmaRestPreflightFile(figmaToken, fileKey, nodeIds);
-        sources.push(`figma:preflight:${fileKey}`);
-      } catch (e) {
-        const msg = e.message || String(e);
-        failRequirementsRead(outPath, {
-          storyKey,
-          gaCoverageRequired,
-          gaHints,
-          sources,
-          failureReason: `Figma preflight failed: ${msg}`,
-          gitlabUrls,
-          gitlabOnlyDescription: gitlabOnly,
-          figmaReadRequired: true,
-          figmaUrls,
-          figmaFileKeys,
-          figmaNodeIdsByFileKey,
-        });
-      }
-    }
+  if (figmaReadRequired && !figmaToken) {
+    failRequirementsRead(outPath, {
+      storyKey,
+      gaCoverageRequired,
+      gaHints,
+      sources,
+      failureReason:
+        "Requirements include Figma link(s) but FIGMA_API_KEY is unset; run verify-figma-access (GET /v1/me) and Figma MCP require a token",
+      gitlabUrls,
+      gitlabOnlyDescription: gitlabOnly,
+      figmaReadRequired: true,
+      figmaUrls,
+      figmaFileKeys,
+      figmaNodeIdsByFileKey,
+    });
   }
 
   const payload = {

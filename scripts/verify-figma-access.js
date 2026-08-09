@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * CI: optional check that FIGMA_API_KEY can call Figma REST (GET /v1/me).
- * Env: FIGMA_API_KEY — if unset or empty, exits 0 (Figma MCP is optional).
+ * CI Figma preflight: one lightweight REST call (GET /v1/me) to verify FIGMA_API_KEY.
+ * File access is validated later by the agent via Figma MCP when figmaReadRequired is true.
+ * Env: FIGMA_API_KEY — if unset or empty, exits 0 (Figma MCP is optional for stories without Figma links).
+ * Extract (requirement-signals) fails when requirements include figma.com URLs but the key is unset.
  */
 
 const FIGMA_ME = "https://api.figma.com/v1/me";

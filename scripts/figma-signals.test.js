@@ -1,10 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import {
-  buildFigmaPreflightUrl,
-  extractFigmaSignals,
-  figmaNodeIdFromUrl,
-} from "./figma-signals.js";
+import { extractFigmaSignals, figmaNodeIdFromUrl } from "./figma-signals.js";
 
 const US_PLG_005_SNIPPET = `
 ## Design / Figma mockups
@@ -49,21 +45,6 @@ describe("figmaNodeIdFromUrl", () => {
         "https://www.figma.com/design/AbCd/file?node-id=19210-4980",
       ),
       "19210:4980",
-    );
-  });
-});
-
-describe("buildFigmaPreflightUrl", () => {
-  it("uses depth=1 when no node ids are linked", () => {
-    const url = buildFigmaPreflightUrl("e8vBoLmhDhs1fxrcFYpxdJ");
-    assert.equal(url, "https://api.figma.com/v1/files/e8vBoLmhDhs1fxrcFYpxdJ?depth=1");
-  });
-
-  it("uses nodes endpoint when node ids are linked", () => {
-    const url = buildFigmaPreflightUrl("e8vBoLmhDhs1fxrcFYpxdJ", ["19210:4980", "1:2"]);
-    assert.equal(
-      url,
-      "https://api.figma.com/v1/files/e8vBoLmhDhs1fxrcFYpxdJ/nodes?ids=19210%3A4980%2C1%3A2&depth=1",
     );
   });
 });

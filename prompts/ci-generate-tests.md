@@ -8,6 +8,6 @@
 
 Follow **`.cursor/skills/jira-story-test-cases-md/SKILL.md`** end to end (pre-check, linked specs, authoring, empty story). Jira input + output contract: **`.cursor/rules/jira-story-input.mdc`**. Format defaults: **`.cursor/rules/test-case-style.mdc`**.
 
-**CI input:** Read **`generated/jira-tests/__STORY_KEY__/requirement-signals.json`** when present. If **`requirementsReadFailed`** is true, stop—the workflow should already have failed. When **`figmaReadRequired`** is true, use **`figmaNodeIdsByFileKey`** (and URL **`node-id=`** params) for scoped Figma MCP reads—never whole-file fetches when node IDs are listed.
+**CI input:** Read **`generated/jira-tests/__STORY_KEY__/requirement-signals.json`** when present. If **`requirementsReadFailed`** is true, stop—the workflow should already have failed.
 
 No questions; no secrets in repo files.

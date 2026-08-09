@@ -16,25 +16,6 @@ export function figmaNodeIdFromUrl(figmaUrl) {
 }
 
 /**
- * Build a lightweight Figma REST URL for CI preflight (avoids full-file 400s on large files).
- *
- * @param {string} fileKey
- * @param {string[]} [nodeIds]
- * @returns {string}
- */
-export function buildFigmaPreflightUrl(fileKey, nodeIds = []) {
-  const encoded = encodeURIComponent(fileKey);
-  if (nodeIds.length > 0) {
-    const params = new URLSearchParams();
-    params.set("ids", nodeIds.join(","));
-    params.set("depth", "1");
-    return `https://api.figma.com/v1/files/${encoded}/nodes?${params}`;
-  }
-  const params = new URLSearchParams({ depth: "1" });
-  return `https://api.figma.com/v1/files/${encoded}?${params}`;
-}
-
-/**
  * @param {string} text
  * @returns {{
  *   figmaUrls: string[];
@@ -74,28 +55,4 @@ export function extractFigmaSignals(text) {
   const figmaReadRequired = figmaFileKeys.length > 0;
 
   return { figmaUrls, figmaFileKeys, figmaNodeIdsByFileKey, figmaReadRequired };
-}
-
-/**
- * @param {string} token
- * @param {string} fileKey
- * @param {string[]} [nodeIds] from linked Figma URLs (node-id query param)
- */
-export async function figmaRestPreflightFile(token, fileKey, nodeIds = []) {
-  const url = buildFigmaPreflightUrl(fileKey, nodeIds);
-  const res = await fetch(url, {
-    headers: { "X-Figma-Token": token },
-  });
-  const text = await res.text();
-  let body;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = null;
-  }
-  if (!res.ok) {
-    const err = body?.err || body?.message || text?.slice(0, 200) || res.statusText;
-    throw new Error(`Figma API HTTP ${res.status} for file ${fileKey}: ${err}`);
-  }
-  return body;
 }
