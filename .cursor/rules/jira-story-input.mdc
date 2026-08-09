@@ -148,7 +148,7 @@ generated/jira-tests/<STORY_KEY>/
 
 ## Project packs (optional styling)
 
-**Generic by default** for every Jira project: **`.cursor/rules/test-case-style.mdc`** and the story's vocabulary only. A **project pack** (generic + team rules) applies **only** when the Jira project key is listed in **`projects/config.json`** → **`packs[<PROJECT_KEY>]`**, or **`PROJECT_PACK`** is set for that run. Packs live under **`projects/`** (e.g. **`projects/EPMRPP/PROJECT.md`**) but are **not** auto-selected from folder name alone. When a pack applies, read **`PROJECT.md`** plus optional **`CONTEXT.md`** / **`examples/`** **in addition to** the generic style rule; the pack **wins on conflict**. Resolution: **`scripts/resolve-project-pack.js`** (CI) or **`projects/config.json`** (IDE). See **`projects/README.md`**.
+**Generic by default** for every run: **`.cursor/rules/test-case-style.mdc`** and the story's vocabulary only. A **project pack** applies when optional CI **project** input ( **`PROJECT`** env ) names an id and **`projects/<id>/PROJECT.md`** exists — e.g. **`project: EPMRPP`**. The Jira issue key does **not** auto-select a pack. When a pack applies, read **`PROJECT.md`** plus optional **`CONTEXT.md`** / **`examples/`** **in addition to** the generic style rule; the pack **wins on conflict**. Resolution: **`scripts/resolve-project-pack.js`**. See **`projects/README.md`**.
 
 ## Cursor Agent CLI (headless)
 

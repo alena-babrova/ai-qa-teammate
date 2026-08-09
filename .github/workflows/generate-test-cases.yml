@@ -12,8 +12,8 @@ on:
         description: Jira issue key (PROJ-123) or browse URL (…/browse/PROJ-123)
         required: true
         type: string
-      project_pack:
-        description: Project pack folder (defaults to projects/<PROJECT_KEY> when it exists)
+      project:
+        description: Optional project pack (e.g. EPMRPP uses projects/EPMRPP/ when that folder exists)
         required: false
         type: string
       cursor_model:
@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 60
     env:
       ISSUE_KEY: ${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
-      PROJECT_PACK: ${{ github.event.inputs.project_pack || github.event.client_payload.project_pack }}
+      PROJECT: ${{ github.event.inputs.project || github.event.client_payload.project || github.event.inputs.project_pack || github.event.client_payload.project_pack }}
       # Instance URLs: repository Variables only (not Secrets)—see docs/GITHUB_SECRETS.md
       JIRA_URL: ${{ vars.JIRA_URL }}
       CONFLUENCE_URL: ${{ vars.CONFLUENCE_URL }}

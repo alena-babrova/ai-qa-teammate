@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "node:path";
 import os from "node:os";
 import {
-  loadProjectPackConfig,
+  normalizePackInput,
   isValidPackDir,
   resolveProjectPack,
   formatProjectPackPrompt,
@@ -16,30 +16,19 @@ function writePack(root, packPath) {
   fs.writeFileSync(path.join(dir, "PROJECT.md"), "# Pack\n");
 }
 
-describe("loadProjectPackConfig", () => {
-  let tmp;
-
-  before(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pack-config-"));
+describe("normalizePackInput", () => {
+  it("maps a short id to projects/<id>", () => {
+    assert.equal(normalizePackInput("EPMRPP"), "projects/EPMRPP");
   });
 
-  after(() => {
-    fs.rmSync(tmp, { recursive: true, force: true });
+  it("accepts a full projects/ path", () => {
+    assert.equal(normalizePackInput("projects/EPMRPP"), "projects/EPMRPP");
   });
 
-  it("returns null when config file is missing", () => {
-    assert.equal(loadProjectPackConfig(tmp), null);
-  });
-
-  it("loads packs mapping from projects/config.json", () => {
-    fs.mkdirSync(path.join(tmp, "projects"), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, "projects/config.json"),
-      JSON.stringify({ packs: { PROJ: "projects/custom", EPMRPP: "projects/EPMRPP" } }),
-    );
-    assert.deepEqual(loadProjectPackConfig(tmp), {
-      packs: { PROJ: "projects/custom", EPMRPP: "projects/EPMRPP" },
-    });
+  it("returns null for empty or path traversal", () => {
+    assert.equal(normalizePackInput(""), null);
+    assert.equal(normalizePackInput("  "), null);
+    assert.equal(normalizePackInput("../escape"), null);
   });
 });
 
@@ -54,66 +43,30 @@ describe("resolveProjectPack", () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it("uses PROJECT_PACK override when the folder is valid", () => {
-    writePack(tmp, "projects/override");
+  it("uses the pack when project input matches an existing folder", () => {
+    writePack(tmp, "projects/EPMRPP");
     assert.equal(
-      resolveProjectPack({
-        root: tmp,
-        projectKey: "OTHER",
-        envOverride: "projects/override",
-        config: { packs: {} },
-      }),
-      "projects/override",
+      resolveProjectPack({ root: tmp, projectInput: "EPMRPP" }),
+      "projects/EPMRPP",
     );
   });
 
-  it("uses config mapping when the project key is listed", () => {
-    writePack(tmp, "projects/shared");
-    assert.equal(
-      resolveProjectPack({
-        root: tmp,
-        projectKey: "PROJ",
-        envOverride: null,
-        config: { packs: { PROJ: "projects/shared" } },
-      }),
-      "projects/shared",
-    );
+  it("returns null when project input is not set", () => {
+    writePack(tmp, "projects/EPMRPP");
+    assert.equal(resolveProjectPack({ root: tmp, projectInput: null }), null);
   });
 
-  it("does not use projects/<PROJECT_KEY>/ unless listed in config", () => {
-    writePack(tmp, "projects/PROJ");
+  it("returns null when the project folder is missing", () => {
     assert.equal(
-      resolveProjectPack({
-        root: tmp,
-        projectKey: "PROJ",
-        envOverride: null,
-        config: { packs: {} },
-      }),
+      resolveProjectPack({ root: tmp, projectInput: "UNKNOWN" }),
       null,
     );
   });
 
-  it("returns null when no valid pack exists", () => {
-    assert.equal(
-      resolveProjectPack({
-        root: tmp,
-        projectKey: "UNKNOWN",
-        envOverride: null,
-        config: { packs: {} },
-      }),
-      null,
-    );
-  });
-
-  it("returns null when config points to a missing or invalid pack", () => {
+  it("returns null when the folder exists but lacks PROJECT.md", () => {
     fs.mkdirSync(path.join(tmp, "projects/empty"), { recursive: true });
     assert.equal(
-      resolveProjectPack({
-        root: tmp,
-        projectKey: "PROJ",
-        envOverride: null,
-        config: { packs: { PROJ: "projects/missing", OTHER: "projects/empty" } },
-      }),
+      resolveProjectPack({ root: tmp, projectInput: "empty" }),
       null,
     );
   });

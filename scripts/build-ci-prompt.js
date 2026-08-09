@@ -6,7 +6,7 @@
  * story (parent when dispatch is a Sub-task). The agent must use STORY_KEY for requirements and for the
  * generated/jira-tests/ output path — never substitute ISSUE_KEY when the two differ. Test case titles must
  * not contain either key (see .cursor/rules/test-case-style.mdc).
- * PROJECT_PACK (optional) — per-run pack override; otherwise projects/config.json only (generic if unlisted).
+ * PROJECT (optional) — project pack id or folder (e.g. EPMRPP → projects/EPMRPP/); generic when unset or missing.
  * Repo contract: prompts/ci-generate-tests.md → .cursor/skills/jira-story-test-cases-md/SKILL.md +
  * .cursor/rules/jira-story-input.mdc.
  */
@@ -30,7 +30,15 @@ if (!issueKey) {
 const storyKey = process.env.STORY_KEY?.trim() || issueKey;
 const projectKey = storyKey.split("-")[0];
 
-const projectPack = resolveProjectPack({ root, projectKey });
+const projectPack = resolveProjectPack({ root });
+if (
+  (process.env.PROJECT?.trim() || process.env.PROJECT_PACK?.trim()) &&
+  !projectPack
+) {
+  console.warn(
+    "::warning::Project pack input was set but no valid projects/<id>/ folder with PROJECT.md was found — using generic style only.",
+  );
+}
 
 const promptPath = path.join(root, "prompts", "ci-generate-tests.md");
 if (!fs.existsSync(promptPath)) {

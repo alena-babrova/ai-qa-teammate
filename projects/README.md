@@ -1,47 +1,28 @@
 # Project packs
 
-A **project pack** adds team-specific wording and examples on top of the generic style rule. **By default every Jira project uses generic rules only.** A pack applies only when its Jira project key is listed in **`projects/config.json`** (or **`PROJECT_PACK`** is set for a one-off run).
+A **project pack** adds team-specific wording and examples on top of the generic style rule. **By default every run uses generic rules only.**
 
 ## How a pack is selected
 
-**Default: generic only** — [`.cursor/rules/test-case-style.mdc`](../.cursor/rules/test-case-style.mdc) plus the story's vocabulary. No project pack.
+**Generic only** unless you pass an optional **`project`** input (CI) or ask for a pack in the IDE.
 
-When you want **generic + project pack** for a Jira project:
+1. Set **`project`** on the workflow run — e.g. **`EPMRPP`** (uses **`projects/EPMRPP/`** when that folder exists and contains **`PROJECT.md`**). You can also pass a full path such as **`projects/EPMRPP`**.
+2. If the folder is **missing** or has no **`PROJECT.md`**, the run stays **generic only** (CI logs a warning).
+3. If **`project`** is **omitted**, the run is **generic only** — the Jira project key on the ticket does **not** auto-select a pack.
 
-1. Create the pack folder (e.g. `projects/MYPROJ/` with `PROJECT.md`).
-2. Add the Jira **project key** to **`projects/config.json`**:
-
-```json
-{
-  "packs": {
-    "MYPROJ": "projects/MYPROJ",
-    "EPMRPP": "projects/EPMRPP"
-  }
-}
-```
-
-Resolution order:
-
-1. **`PROJECT_PACK`** — per-run override (GitHub Actions **project pack** input, Jira automation `client_payload.project_pack`, or env var).
-2. **`projects/config.json`** → `packs[<PROJECT_KEY>]` — **only** way to enable a pack for normal runs.
-3. **No pack** — generic style rule only.
-
-A folder under `projects/` is **not** picked up automatically. The Jira key must appear in config (unless you pass **`PROJECT_PACK`** for that run).
-
-Per-run **`PROJECT_PACK`** still overrides the config file.
+Jira automation can send **`client_payload.project`** (legacy **`project_pack`** is still accepted).
 
 ## Layout
 
 ```
 projects/
-  config.json    # Jira project key → pack folder (generic only when key is absent)
-  PROJ/
+  EPMRPP/
     PROJECT.md     # required: the instructions the agent follows
     CONTEXT.md     # optional: granularity, coverage splits, calibration
     examples/      # optional: full example suites to imitate
 ```
 
-Only `PROJECT.md` is required. It is **free-form Markdown** — there is no schema and no configuration keys. Write whatever a new QA joining your team would need in order to match the existing suite.
+Only **`PROJECT.md`** is required. It is **free-form Markdown** — write whatever a new QA joining your team would need in order to match the existing suite. Instructions in **`PROJECT.md`** **override** **`.cursor/rules/test-case-style.mdc`** on conflict.
 
 ## What belongs in `PROJECT.md`
 
@@ -54,20 +35,20 @@ Useful things to pin down:
 - **Coverage expectations** — which case types your team always writes (layout, validation, permissions, API errors, analytics ON/OFF pairs) and which it never writes.
 - **Anything to avoid** — scenarios your team deliberately excludes.
 
-Instructions in `PROJECT.md` **override** `.cursor/rules/test-case-style.mdc` on conflict.
-
 ## Starting a new pack
 
 ```bash
-mkdir -p projects/<PROJECT_KEY>
+mkdir -p projects/<PROJECT_ID>
 ```
 
-Then write `PROJECT.md`. A minimal starting point:
+Then write **`projects/<PROJECT_ID>/PROJECT.md`**. Enable it per run with workflow input **`project: <PROJECT_ID>`**.
+
+A minimal starting point:
 
 ```markdown
-# <PROJECT_KEY> (<Product name>) — project pack
+# <PROJECT_ID> (<Product name>) — project pack
 
-Applies to stories whose key starts with **`<PROJECT_KEY>`**. Read together with
+Applies when CI **project** input is **`<PROJECT_ID>`**. Read together with
 **`.cursor/rules/test-case-style.mdc`**; where the two differ, **this file wins**.
 
 ## Vocabulary
@@ -93,6 +74,6 @@ Applies to stories whose key starts with **`<PROJECT_KEY>`**. Read together with
 - Never write: …
 ```
 
-Adding example suites under `examples/` (real, reviewed test cases from your project) is the fastest way to calibrate granularity — reference them from `PROJECT.md` so the agent knows which example fits which kind of story.
+Adding example suites under **`examples/`** is the fastest way to calibrate granularity — reference them from **`PROJECT.md`** so the agent knows which example fits which kind of story.
 
-`projects/EPMRPP/` is a worked example: a full pack with `PROJECT.md`, `CONTEXT.md`, and 20 example suites.
+**`projects/EPMRPP/`** is a worked example: **`PROJECT.md`**, **`CONTEXT.md`**, and 20 example suites.

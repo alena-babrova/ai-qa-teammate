@@ -1,6 +1,0 @@
-{
-  "_note": "Generic style only until a Jira project key is listed under packs. Values are repo-relative pack folders.",
-  "packs": {
-    "EPMRPP": "projects/EPMRPP"
-  }
-}

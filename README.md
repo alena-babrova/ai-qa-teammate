@@ -4,7 +4,7 @@ Turns a **Jira story or task** into a **Markdown file of manual test cases**, us
 
 **Nothing is written back to Jira.** The issue is an input: the pipeline never creates, updates, links, labels, or comments on Jira issues. The Atlassian MCP server runs with `READ_ONLY_MODE`, and the REST helper in `scripts/jira-client.js` exposes read calls only.
 
-**Default: generic style for every Jira project.** Test cases use [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc) and the story's vocabulary. To add a **project pack** (generic + team rules), list the Jira project key in [`projects/config.json`](projects/config.json) — see [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
+**Default: generic style for every run.** Test cases use [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc) and the story's vocabulary. To add a **project pack** (generic + team rules), set optional workflow input **`project`** (e.g. `EPMRPP`) when `projects/EPMRPP/` exists — see [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
 
 ## How it runs (CI)
 
@@ -12,7 +12,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 
 ## Starting a run
 
-- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (`PROJ-123`) **or** paste the **browse URL** (`…/browse/PROJ-123`); then choose **Cursor Agent LLM** (default **`composer-2.5`**; run **`agent models`** locally if an id fails for your account). Optionally set **project pack** to override the pack folder.
+- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (`PROJ-123`) **or** paste the **browse URL** (`…/browse/PROJ-123`); choose **Cursor Agent LLM** (default **`composer-2.5`**). Optionally set **project** (e.g. `EPMRPP`) to apply `projects/EPMRPP/` when that pack exists; leave empty for generic-only output.
 - **From Jira:** You can drive the same workflow with automation (see [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md)).
 
 ## Output
@@ -29,7 +29,7 @@ The folder is uploaded as the **`generated-jira-tests-<ISSUE_KEY>`** artifact on
 
 ## Project packs
 
-**Generic by default.** The agent uses the generic style rule and the story's vocabulary. **Generic + project pack** applies only when the Jira project key is in [`projects/config.json`](projects/config.json) (or you set the workflow **project pack** input for one run). See [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
+**Generic by default.** Optional workflow input **`project`** (e.g. `EPMRPP`) enables **generic + project pack** when `projects/<id>/` exists. The Jira ticket key does not auto-select a pack. See [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
 
 [`projects/EPMRPP/`](projects/EPMRPP/) is a full worked example. See [`projects/README.md`](projects/README.md) for how to add your own.
 
