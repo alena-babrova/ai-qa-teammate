@@ -23,16 +23,16 @@ Before authoring **`tests.json`**, Jira Tests, or Markdown:
 
 | Example file | Use when the story is similar to |
 |--------------|-----------------------------------|
-| `EPMRPP-89670-test-cases.md` | Organization-level UI page layout, table columns, pagination, permissions matrix |
-| `EPMRPP-91802-test-cases.md` | Instance-level modal CRUD, field validation, org/project assignment, GA events |
-| `EPMRPP-105682-test-cases.md` | Invitation / registration flow, email link activation, redirect after signup |
-| `EPMRPP-111251-test-cases.md` | Filters side panel, filter combinations, “All Filters” UX, autocomplete fields |
-| `EPMRPP-108273-test-cases.md` | Table customization (columns modal, localStorage, reset to default) |
-| `EPMRPP-114379-test-cases.md` | Org settings integrations page, mixed UI + API + GA coverage |
-| `EPMRPP-114952-test-cases.md` | Global plugin integration CRUD, validation, connection states, API permissions |
-| `EPMRPP-114989-test-cases.md` | Project-level plugin page, empty vs configured states, device list |
-| `EPMRPP-93348-test-cases.md` | REST API endpoint, role/org-type permission matrix, error codes |
-| `EPMRPP-99095-test-cases.md` | REST API partial update, field validation, slug/name rules, auth errors |
+| `tests/EPMRPP-89670-test-cases.md` | Organization-level UI page layout, table columns, pagination, permissions matrix |
+| `tests/EPMRPP-91802-test-cases.md` | Instance-level modal CRUD, field validation, org/project assignment, GA events |
+| `tests/EPMRPP-105682-test-cases.md` | Invitation / registration flow, email link activation, redirect after signup |
+| `tests/EPMRPP-111251-test-cases.md` | Filters side panel, filter combinations, “All Filters” UX, autocomplete fields |
+| `tests/EPMRPP-108273-test-cases.md` | Table customization (columns modal, localStorage, reset to default) |
+| `tests/EPMRPP-114379-test-cases.md` | Org settings integrations page, mixed UI + API + GA coverage |
+| `tests/EPMRPP-114952-test-cases.md` | Global plugin integration CRUD, validation, connection states, API permissions |
+| `tests/EPMRPP-114989-test-cases.md` | Project-level plugin page, empty vs configured states, device list |
+| `tests/EPMRPP-93348-test-cases.md` | REST API endpoint, role/org-type permission matrix, error codes |
+| `tests/EPMRPP-99095-test-cases.md` | REST API partial update, field validation, slug/name rules, auth errors |
 | `GA tests/GA-analytics-test-cases.md` | Google Analytics — `collect` payload, GA ON/OFF pairs, scope in title (Instance / Organization / Project level) |
 
 ## How format maps to deliverables
@@ -71,7 +71,7 @@ Before authoring **`tests.json`**, Jira Tests, or Markdown:
 
 ## Investigating coverage in Jira (**very optional**)
 
-**Default path:** **`test-case-examples/CONTEXT.md`** + matching **`EPMRPP-*-test-cases.md`** files + **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
+**Default path:** **`test-case-examples/CONTEXT.md`** + matching **`tests/EPMRPP-*-test-cases.md`** files + **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
 
 **When to consider (only if needed):** Repo examples do not cover the story area, or you want extra signal on **coverage patterns** (permissions matrix depth, validation cases, GA pairs) before drafting **`tests[]`**.
 
@@ -132,7 +132,7 @@ If Jira tools are **unavailable** or the fetch **errors**, **do not** use this p
 
 ## GitHub Actions (this repo)
 
-Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. Follow **`prompts/ci-generate-tests.md`** (from **`scripts/build-ci-prompt.js`**) and **`.cursor/rules/jira-test-issues.mdc`**. On reruns, **fetch linked Tests** for **`STORY_KEY`** first; **update** matching issues, **create** only new ones—see **Sync with existing Jira Tests** in **`jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
+Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. In CI, **`scripts/build-ci-prompt.js`** substitutes **`__ISSUE_KEY__`** / **`__STORY_KEY__`** into **`prompts/ci-generate-tests.md`** and points here; full Jira contract: **`.cursor/rules/jira-test-issues.mdc`**. On reruns, **fetch linked Tests** for **`STORY_KEY`** first; **update** matching issues, **create** only new ones—see **Sync with existing Jira Tests** in **`jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
 
 ## Interaction with other skills
 
@@ -141,10 +141,10 @@ Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test i
 ## Checklist
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
-- [ ] **Reference context:** **`test-case-examples/CONTEXT.md`** read; relevant **`EPMRPP-*-test-cases.md`** examples consulted for similar story shape.
+- [ ] **Reference context:** **`test-case-examples/CONTEXT.md`** read; relevant **`tests/EPMRPP-*-test-cases.md`** examples consulted for similar story shape.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
 - [ ] Confluence / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story); fetch **nested** authoritative GA4/Confluence/Figma links cited inside fetched specs when needed. On **Confluence/GitLab** MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output. When **`figmaReadRequired`** (signals or any **`figma.com`** URL in loaded requirements): **mandatory** Figma MCP—on failure write **`figma-read-failure.json`**, **no** tests/Jira sync, **no** invented UI (**`jira-test-issues.mdc`**).
-- [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** tests and align **`collect`** payload with KB/spec (**`prompts/ci-generate-tests.md`**). If **`figmaReadRequired`** is true, set **`meta.json`** **`figmaFileKeysRead`** after successful Figma MCP reads.
+- [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** tests and align **`collect`** payload with KB/spec (see **Authoring rules**). If **`figmaReadRequired`** is true, set **`meta.json`** **`figmaFileKeysRead`** after successful Figma MCP reads.
 - [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
 - [ ] **Optional Jira investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, and/or library JQL—**read-only**, small sample only; skipped when not needed.
 - [ ] **User-requested `Test` mirror:** fetched only when the user explicitly asked; **zero linked Tests** handled without inventing a suite.

@@ -1,6 +1,6 @@
 # EPMRPP test-case generation context
 
-Derived from all files in **`test-case-examples/`**, **`test-case-examples/API tests/`**, and **`test-case-examples/GA tests/`** (472+ test cases across UI/API/GA reference suites; **194** API-only cases in **`API tests/`**). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in **`EPMRPP-*-test-cases.md`** (root), **`API tests/EPMRPP-*-test-cases.md`** for REST, and **`GA tests/GA-analytics-test-cases.md`** for Google Analytics — prefer **`API tests/`** when authoring REST coverage and **`GA tests/`** when the story is GA-only or telemetry-heavy.
+Derived from all files in **`test-case-examples/tests/`**, **`test-case-examples/API tests/`**, and **`test-case-examples/GA tests/`** (**482** unique test cases: **278** UI/mixed in **`tests/`** + **194** API-only in **`API tests/`** + **10** GA reference cases in **`GA tests/`**; **`EPMRPP-99095`** is duplicated in **`tests/`** and **`API tests/`** with the same **54** cases—count once). Use this document **together with** **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when authoring **`tests.json`**, Jira Tests, or Markdown. Full per-story examples remain in **`tests/EPMRPP-*-test-cases.md`**, **`API tests/EPMRPP-*-test-cases.md`** for REST, and **`GA tests/GA-analytics-test-cases.md`** for Google Analytics — prefer **`API tests/`** when authoring REST coverage and **`GA tests/`** when the story is GA-only or telemetry-heavy.
 
 ---
 
@@ -33,6 +33,8 @@ Every deliverable follows the same skeleton:
 - **`STORY_KEY` must not appear** in test titles.
 - **`---`** between cases.
 
+**Exception:** **`GA tests/GA-analytics-test-cases.md`** is a cross-story GA reference suite (header `# Test cases: GA analytics — reference suite`, no single **`STORY_KEY`**); individual cases still follow the same *Preconditions* / *Steps* / *Expected results* blocks.
+
 ---
 
 ## Title patterns (Summary / `tests[].summary`)
@@ -42,7 +44,7 @@ Every deliverable follows the same skeleton:
 | `<Area>. <Page>. <Behavior>` | UI / functional | `Organizations. Projects page. Layout` |
 | `<Area>. <Page>. Permissions. <Behavior>` | Role/access matrix | `Organizations. Projects page. Permissions. Member assigned to the Organization and Projects can view only their assigned Projects` |
 | `GA. <Scope>. <Page>. <Behavior>` | Analytics | `GA. Instance level. All Users page. GA is sent by clicking on the "Create user" button` |
-| `API. <Controller>. <Behavior>` | REST | `API. Project Controller. Admin that is assigned to the project can update project name` |
+| `API. <Controller>. <Behavior>` | REST | `API. Project Controller. Admin that is assigned to the project can update project name` (see **API title variants** below for mixed-story wording) |
 | `<Feature>. <Behavior>` | Named feature/plugin | `Mobitru. Add Global integration`, `Cloud Devices. Empty page state` |
 
 **Behavior verbs in titles:** Layout, Possible to…, Impossible to…, Canceling/Cancelling…, Filter tests by…, is displayed, is not displayed, can / cannot / can't.
@@ -79,6 +81,8 @@ Reference suite: **`GA tests/GA-analytics-test-cases.md`**. Split and wording pa
 | **Sidebar hover** | Collapsed sidebar expand + click | `category: sidebar`, `place: sidebar_hover`, `icon_name: user_control`; scope in title (Instance / Organization / Project level) |
 | **GA OFF** | Server Settings Analytics disabled | Preconditions `GA is OFF`; same steps as ON case; expected: no `collect` request (often multiple step numbers in one test) |
 | **Multi-action in one test** | Several clicks each with own payload | Repeat “Check … collect” after each action; expected lines `4.`, `6.`, `8.` or `4, 6.` for OFF |
+| **Title phrasing (ON)** | Any scope | `GA is sent when selecting …` (menu option); `GA is sent by clicking on …` (button); `GA is sent by opening …` (page / empty state) — see **`tests/EPMRPP-91802-test-cases.md`** and **`GA tests/`** |
+| **Title phrasing (OFF)** | Paired negative | `Set GA OFF and …`; `GA is not sent … when GA OFF`; `GA OFF and …` (Project Team) |
 
 Always pair **GA is sent** cases with **GA OFF** (or **Set GA OFF and verify…**) when the story adds new telemetry. Priority is often **Minor** (telemetry-only) unless the story is GA-only.
 
@@ -118,7 +122,7 @@ Always pair **GA is sent** cases with **GA OFF** (or **Set GA OFF and verify…*
 
 ### REST API endpoints
 
-Reference suites live in **`test-case-examples/API tests/`** (7 stories, 194 cases). Split by **endpoint shape** first, then apply the cross-cutting matrix below.
+Reference suites live in **`test-case-examples/API tests/`** (7 stories, **194** cases). **`tests/EPMRPP-93348-test-cases.md`** adds **30** DELETE cases using the same patterns. Split by **endpoint shape** first, then apply the cross-cutting matrix below.
 
 #### By endpoint type
 
@@ -129,6 +133,7 @@ Reference suites live in **`test-case-examples/API tests/`** (7 stories, 194 cas
 | **PATCH JSON Patch** | EPMRPP-99095, EPMRPP-104599, EPMRPP-97280 | `replace` / `remove` ops on `name`, `slug`, `users`; role × assignment matrix (Admin/Manager/Member-editor/viewer); simultaneous multi-field or multi-user ops; each invalid `op` / `path` / `value`; missing path param; invalid/non-existent IDs; 400 field validation; 200 + success message + **DB verify** |
 | **POST search / filter** | EPMRPP-98512 | Admin filtered list; 403 non-Admin; 401 auth; one case per **filter_key** (uuid, email, full name, account type, instance role, activity, dates, org id, …); operator matrix (`EQ`, `IN`, …) where applicable; invalid filter key/operator; default limit 300; custom limit; default sort; custom sort field/direction; pagination |
 | **GET resource** | EPMRPP-97027 | Happy path per role; invalid/non-existent `user_id`; 401 auth; query params (e.g. `thumbnail`); deprecated endpoints (Swagger UI observation) |
+| **DELETE remove** | EPMRPP-93348 | Happy path per role (Admin/Manager unassign self or other); Member self-unassign only; UPSA / EXTERNAL org business rules; **cannot** / **Impossible to** matrix; 401 auth; missing/invalid/non-existent `org_id` / `user_id`; 403 for disallowed role |
 
 #### Cross-cutting matrix (all API types)
 
@@ -145,14 +150,23 @@ Reference suites live in **`test-case-examples/API tests/`** (7 stories, 194 cas
 
 #### API title shape
 
-`API. <Controller name>. <Behavior>` — **Controller** matches Swagger grouping (`Project Controller`, `Organization User Controller`, `User Controller`, `Organization-Projects Controller`, `File Storage Controller`). **Actor and assignment** are usually embedded in the behavior phrase, not a separate title segment:
+Prefer `API. <Controller name>. <Behavior>` — **Controller** matches Swagger grouping (`Project Controller`, `Organization User Controller`, `User Controller`, `Organization-Projects Controller`, `File Storage Controller`). **Actor and assignment** are usually embedded in the behavior phrase, not a separate title segment:
 
 - `API. Project Controller. Admin that is assigned to the project can update project name`
 - `API. Organization User Controller. Member cannot get a list of users…`
 - `API. User Controller. Filtering users by email`
 - `API. User Controller. Default values are applied to non-required fields when they are not specified`
 
-**Behavior verbs:** **Possible to** / **Impossible to** / **can** / **cannot** / **gets** / **Filtering** / **Default parameter values** / **Sorting** / **Maximum N users are returned by default**.
+**API title variants** (mixed UI+API stories in **`tests/`** — mirror the linked suite when one exists):
+
+| Variant | Example file | Example title |
+|---------|--------------|---------------|
+| Title Case **Controller** | **`API tests/`**, EPMRPP-99095 | `API. Project Controller. Admin that is assigned to the project can update project name` |
+| Resource name (no **Controller** suffix) | EPMRPP-93348 | `API. Organization User. Admin unassigns another user from INTERNAL organization` |
+| Lowercase controller + HTTP code in title | EPMRPP-114379 | `API. organization-integrations controller. 400 error on using org_id = non-integer when retrieving organization integrations` |
+| Feature/plugin as middle segment | EPMRPP-114952 | `API. Mobitru. Non-admin user cannot create global integration` |
+
+**Behavior verbs:** **Possible to** / **Impossible to** / **can** / **cannot** / **gets** / **Filtering** / **Default parameter values** / **Sorting** / **Maximum N users are returned by default**; error-focused titles may lead with **`400 error`** / **`401 error`** / **`403 error`** / **`404 error`** (EPMRPP-114379).
 
 #### API preconditions
 
@@ -306,10 +320,10 @@ Three styles appear in examples — **pick one per test and stay consistent with
 | Org projects list | EPMRPP-89670 | 33 | Layout + columns + pagination + 8 permission cases |
 | Filters panel | EPMRPP-111251 | 31 | ~1 case per filter + combinations + clear/cross |
 | Column customization | EPMRPP-108273 | 26 | Modal CRUD + localStorage + reset |
-| Modal create user | EPMRPP-91802 | 45 | Validation heavy + org/project assignment matrix + 6 GA |
+| Modal create user | EPMRPP-91802 | 45 | Validation heavy + org/project assignment matrix + 5 GA |
 | Invitation flow | EPMRPP-105682 | 34 | Form validation + redirect matrix + invite variants |
-| Plugin CRUD | EPMRPP-114952 | 32 | Per-field validation + API 403/409 |
-| Integrations page | EPMRPP-114379 | 41 | UI states + API list/pagination/errors + 2 GA |
+| Plugin CRUD | EPMRPP-114952 | 32 | 27 UI + 5 API (403/409 permission and duplicate integration) |
+| Integrations page | EPMRPP-114379 | 41 | 9 UI + 30 API (list/pagination/errors) + 2 GA |
 | API unassign user | EPMRPP-93348 | 30 | Role × org-type matrix + 401/403/404/400 |
 | **API PATCH project (name/slug)** | **API tests/EPMRPP-99095** | **54** | Field/path/auth/permission matrix; DB checks |
 | **API PATCH project (role change)** | **API tests/EPMRPP-104599** | **39** | JSON Patch `users`; self-role rules; combined ops |
@@ -345,26 +359,26 @@ Use these counts as **density targets**: exhaustive API endpoint stories **18–
 
 ## Source index
 
-### UI / mixed examples (repo root)
+### UI / mixed examples (`tests/`)
 
 | File | Story focus |
 |------|-------------|
-| `EPMRPP-89670-test-cases.md` | Organization Projects page, table, permissions |
-| `EPMRPP-91802-test-cases.md` | Create user modal, validation, GA, assignments |
-| `EPMRPP-105682-test-cases.md` | Invitation link, registration, redirects |
-| `EPMRPP-111251-test-cases.md` | All Filters side panel, filter combinations |
-| `EPMRPP-108273-test-cases.md` | Customize Columns modal, localStorage |
-| `EPMRPP-114379-test-cases.md` | Org Email Server integrations, UI + API + GA |
-| `EPMRPP-114952-test-cases.md` | Mobitru global integration CRUD |
-| `EPMRPP-114989-test-cases.md` | Cloud Devices page, Mobitru attachment |
-| `EPMRPP-93348-test-cases.md` | DELETE org user API, org types, UPSA |
-| `EPMRPP-99095-test-cases.md` | PATCH project name/slug API (also in **API tests/**) |
+| `tests/EPMRPP-89670-test-cases.md` | Organization Projects page, table, permissions |
+| `tests/EPMRPP-91802-test-cases.md` | Create user modal, validation, GA, assignments |
+| `tests/EPMRPP-105682-test-cases.md` | Invitation link, registration, redirects |
+| `tests/EPMRPP-111251-test-cases.md` | All Filters side panel, filter combinations |
+| `tests/EPMRPP-108273-test-cases.md` | Customize Columns modal, localStorage |
+| `tests/EPMRPP-114379-test-cases.md` | Org Email Server integrations, UI + API + GA |
+| `tests/EPMRPP-114952-test-cases.md` | Mobitru global integration CRUD |
+| `tests/EPMRPP-114989-test-cases.md` | Cloud Devices page, Mobitru attachment |
+| `tests/EPMRPP-93348-test-cases.md` | DELETE org user API (`API. Organization User. …`), org types, UPSA |
+| `tests/EPMRPP-99095-test-cases.md` | PATCH project name/slug API (also in **API tests/**) |
 
 ### GA analytics examples (`GA tests/`)
 
 | File | Story focus |
 |------|-------------|
-| `GA tests/GA-analytics-test-cases.md` | `collect` payload checks — Instance / Org / Project scope, page_view, GA OFF pairs, Promo `link_name` |
+| `GA tests/GA-analytics-test-cases.md` | **10** curated `collect` payload checks — Instance / Org / Project scope, `page_view`, sidebar hover, GA OFF pairs, Promo `link_name` (Jira Test sources listed in file header) |
 
 ### API-only examples (`API tests/`)
 
@@ -378,7 +392,7 @@ Use these counts as **density targets**: exhaustive API endpoint stories **18–
 | `API tests/EPMRPP-98512-test-cases.md` | POST user search — filters, operators, sort/limit |
 | `API tests/EPMRPP-97027-test-cases.md` | GET user avatar — auth, invalid id, deprecation |
 
-When generating new tests, **read this file first**, then open matching files from the root, **`GA tests/`**, and/or **`API tests/`** for full step-level examples. For new **REST-only** stories, start from the closest row in **API tests/**. For **GA.** stories or AC that mandate telemetry, start from **`GA tests/GA-analytics-test-cases.md`**.
+When generating new tests, **read this file first**, then open matching files from **`tests/`**, **`GA tests/`**, and/or **`API tests/`** for full step-level examples. For new **REST-only** stories, start from the closest row in **API tests/**. For **GA.** stories or AC that mandate telemetry, start from **`GA tests/GA-analytics-test-cases.md`**.
 
 ---
 
