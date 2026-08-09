@@ -1,15 +1,40 @@
 # Project packs
 
-A **project pack** adjusts how test cases are written for one Jira project. Packs are optional: without one, the agent uses the generic conventions in **`.cursor/rules/test-case-style.mdc`**.
+A **project pack** adds team-specific wording and examples on top of the generic style rule. **By default every Jira project uses generic rules only.** A pack applies only when its Jira project key is listed in **`projects/config.json`** (or **`PROJECT_PACK`** is set for a one-off run).
 
 ## How a pack is selected
 
-The pack folder name is the **project key** — the part of the issue key before the dash. A story `PROJ-123` uses `projects/PROJ/` when that folder exists. Set the `PROJECT_PACK` environment variable (or workflow input) to a folder path to override the lookup.
+**Default: generic only** — [`.cursor/rules/test-case-style.mdc`](../.cursor/rules/test-case-style.mdc) plus the story's vocabulary. No project pack.
+
+When you want **generic + project pack** for a Jira project:
+
+1. Create the pack folder (e.g. `projects/MYPROJ/` with `PROJECT.md`).
+2. Add the Jira **project key** to **`projects/config.json`**:
+
+```json
+{
+  "packs": {
+    "MYPROJ": "projects/MYPROJ",
+    "EPMRPP": "projects/EPMRPP"
+  }
+}
+```
+
+Resolution order:
+
+1. **`PROJECT_PACK`** — per-run override (GitHub Actions **project pack** input, Jira automation `client_payload.project_pack`, or env var).
+2. **`projects/config.json`** → `packs[<PROJECT_KEY>]` — **only** way to enable a pack for normal runs.
+3. **No pack** — generic style rule only.
+
+A folder under `projects/` is **not** picked up automatically. The Jira key must appear in config (unless you pass **`PROJECT_PACK`** for that run).
+
+Per-run **`PROJECT_PACK`** still overrides the config file.
 
 ## Layout
 
 ```
 projects/
+  config.json    # Jira project key → pack folder (generic only when key is absent)
   PROJ/
     PROJECT.md     # required: the instructions the agent follows
     CONTEXT.md     # optional: granularity, coverage splits, calibration

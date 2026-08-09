@@ -10,7 +10,7 @@
     "verify:tests": "node scripts/verify-generated-tests.js",
     "verify:figma": "node scripts/verify-figma-access.js",
     "verify:jira": "node scripts/verify-jira-access.js",
-    "test": "node --test scripts/figma-signals.test.js scripts/verify-figma-read.test.js scripts/verify-generated-tests.test.js scripts/requirement-links.test.js",
+    "test": "node --test scripts/figma-signals.test.js scripts/verify-figma-read.test.js scripts/verify-generated-tests.test.js scripts/requirement-links.test.js scripts/resolve-project-pack.test.js",
     "normalize:issue": "node scripts/normalize-issue-input.js"
   }
 }

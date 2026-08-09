@@ -9,7 +9,7 @@ alwaysApply: true
 
 Whenever you **author** manual test cases from a Jira issue into Markdown. **Format only** — Jira reading, **`STORY_KEY`**, and the output contract are in **`.cursor/rules/jira-story-input.mdc`**; shape guidance is in **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
 
-**These are defaults.** When the story’s project has a pack at **`projects/<PROJECT_KEY>/`**, read **`PROJECT.md`** (and **`CONTEXT.md`** / **`examples/`** if present) and follow it; the pack **overrides** anything below. Without a pack, use these conventions and the story’s own vocabulary—**do not** import naming, product nouns, or scenario patterns from another project’s pack.
+**These are the default for every Jira project.** When a pack is **enabled in `projects/config.json`** for the story's project key, read that pack's **`PROJECT.md`** (and **`CONTEXT.md`** / **`examples/`** if present) **in addition to** this file; the pack **wins on conflict**. Packs are **not** applied automatically from a folder name alone — the Jira key must be in config. Without a configured pack, use these conventions and the story's own vocabulary—**do not** import naming, product nouns, or scenario patterns from another project's pack.
 
 **Test case titles** (Markdown **`##`**) must **not** include the issue key (**`STORY_KEY`**) or a Sub-task dispatch key when it differs. Traceability comes from the output folder **`generated/jira-tests/<STORY_KEY>/`** and the link at the top of the file, not from the title text.
 

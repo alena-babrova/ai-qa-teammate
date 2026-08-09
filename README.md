@@ -4,7 +4,7 @@ Turns a **Jira story or task** into a **Markdown file of manual test cases**, us
 
 **Nothing is written back to Jira.** The issue is an input: the pipeline never creates, updates, links, labels, or comments on Jira issues. The Atlassian MCP server runs with `READ_ONLY_MODE`, and the REST helper in `scripts/jira-client.js` exposes read calls only.
 
-**Any Jira project works.** Test cases are written with the project-agnostic conventions in [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc). A project that wants its own wording, coverage expectations, or examples can add a **project pack** — see [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
+**Default: generic style for every Jira project.** Test cases use [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc) and the story's vocabulary. To add a **project pack** (generic + team rules), list the Jira project key in [`projects/config.json`](projects/config.json) — see [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
 
 ## How it runs (CI)
 
@@ -29,7 +29,7 @@ The folder is uploaded as the **`generated-jira-tests-<ISSUE_KEY>`** artifact on
 
 ## Project packs
 
-Without a pack, the agent follows the generic style rule and the story's own vocabulary. With a pack at `projects/<PROJECT_KEY>/`, it also follows that project's `PROJECT.md` (plus optional `CONTEXT.md` and `examples/`), which override the generic defaults. Packs are selected from the project key in the issue key, so `PROJ-123` uses `projects/PROJ/`.
+**Generic by default.** The agent uses the generic style rule and the story's vocabulary. **Generic + project pack** applies only when the Jira project key is in [`projects/config.json`](projects/config.json) (or you set the workflow **project pack** input for one run). See [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
 
 [`projects/EPMRPP/`](projects/EPMRPP/) is a full worked example. See [`projects/README.md`](projects/README.md) for how to add your own.
 

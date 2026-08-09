@@ -3,8 +3,8 @@ name: jira-story-test-cases-md
 description: >-
   Clarifies how Jira story content maps to manual test cases in Markdown. Jira reading and the
   output contract are in .cursor/rules/jira-story-input.mdc; formatting is in
-  .cursor/rules/test-case-style.mdc, optionally overridden by a project pack at
-  projects/<PROJECT_KEY>/. Very optional read-only Jira investigation (Epic closed stories,
+  .cursor/rules/test-case-style.mdc, extended by a project pack when listed in
+  projects/config.json. Very optional read-only Jira investigation (Epic closed stories,
   Test library) when examples are insufficient. Use for Jira-sourced QA tests.
 ---
 
@@ -12,19 +12,21 @@ description: >-
 
 ## When this applies
 
-Deriving **manual** tests from a **Jira User Story** or **Epic** (description, AC, Gherkin, scope) into a **Markdown** file. **Do not** ask styling questions: use **`.cursor/rules/test-case-style.mdc`** for format defaults and the project pack (below) when one exists.
+Deriving **manual** tests from a **Jira User Story** or **Epic** (description, AC, Gherkin, scope) into a **Markdown** file. **Do not** ask styling questions: always use **`.cursor/rules/test-case-style.mdc`**. Add a project pack **only** when **`projects/config.json`** lists the Jira project key (or **`PROJECT_PACK`** / the CI prompt names a pack).
 
 **Read-only:** the Jira issue is input. Never create, update, link, label, or comment on Jira issues—see **`.cursor/rules/jira-story-input.mdc`** → **Read-only Jira**.
 
-## Project pack (styling per project)
+## Project pack (opt-in: generic + project rules)
 
-**`PROJECT_KEY`** is the part of **`STORY_KEY`** before the dash (`PROJ-123` → `PROJ`).
+**Default: generic only** — **`.cursor/rules/test-case-style.mdc`** and the story's vocabulary.
 
-1. Check for **`projects/<PROJECT_KEY>/`** (or the folder given by **`PROJECT_PACK`** / the CI prompt).
-2. **Pack exists:** read **`PROJECT.md`**, then **`CONTEXT.md`** if present (granularity, title shapes, coverage splits, calibration counts), then the matching files under **`examples/`** when you need full step-level examples for a similar feature type. The pack **overrides** **`.cursor/rules/test-case-style.mdc`** on conflict.
-3. **No pack:** use **`.cursor/rules/test-case-style.mdc`** plus the story’s own vocabulary. **Do not** borrow another project’s product nouns, page names, or scenario patterns. If the story area is unfamiliar, the optional Jira investigation below is the fallback.
+**Generic + pack** when the Jira project key is listed in **`projects/config.json`** → **`packs[<PROJECT_KEY>]`**, or **`PROJECT_PACK`** / the CI prompt names a folder for this run.
 
-See **`projects/README.md`** for pack layout.
+1. Read **`projects/config.json`** and resolve the pack for **`PROJECT_KEY`** (part of **`STORY_KEY`** before the dash).
+2. **Pack configured:** read **`PROJECT.md`**, then **`CONTEXT.md`** if present, then matching **`examples/`** when needed. Apply **generic style + pack**; the pack **wins on conflict**.
+3. **Not in config:** **generic only**. **Do not** open **`projects/<PROJECT_KEY>/`** or another project's pack just because the folder exists.
+
+See **`projects/README.md`** and **`projects/config.json`**.
 
 ## Deliverable
 
@@ -65,7 +67,7 @@ One Markdown file at **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.
 
 ## Investigating coverage in Jira (**very optional**, read-only)
 
-**Default path:** the project pack (**`PROJECT.md`** + **`CONTEXT.md`** + **`examples/`**) or, without a pack, **`.cursor/rules/test-case-style.mdc`** and the story itself. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
+**Default path:** **`.cursor/rules/test-case-style.mdc`** and the story itself—or, when the project key is in **`projects/config.json`**, generic style **plus** the configured pack. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
 
 **When to consider (only if needed):** the project has no pack, the pack’s examples do not cover the story area, or you want extra signal on **coverage patterns** (permissions matrix depth, validation cases, analytics pairs) before drafting cases.
 
@@ -135,7 +137,7 @@ The output is **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.md`** p
 ## Checklist
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
-- [ ] **Project pack** checked at **`projects/<PROJECT_KEY>/`**; when present, **`PROJECT.md`** (+ **`CONTEXT.md`** / **`examples/`**) followed; when absent, generic style rule only with no borrowed vocabulary.
+- [ ] **Project pack:** resolved from **`projects/config.json`** (or **`PROJECT_PACK`**); when listed, generic style **plus** pack; when not listed, **generic only** — do not use another project's folder.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
 - [ ] Confluence / GitLab MCP used for **story-linked** URLs only (**`jira-story-input.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** repository browsing beyond links from the story); fetch **nested** authoritative analytics/Confluence/Figma links cited inside fetched specs when needed. On **Confluence/GitLab** MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output. When **`figmaReadRequired`** (signals or any **`figma.com`** URL in loaded requirements): **mandatory** Figma MCP—on failure write **`figma-read-failure.json`**, **no** deliverable, **no** invented UI.
 - [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** cases and align payload details with the KB/spec. If **`figmaReadRequired`** is true, set **`meta.json`** **`figmaFileKeysRead`** after successful Figma MCP reads.

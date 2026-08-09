@@ -1,26 +1,40 @@
 # Project packs
 
-The generator works on any Jira project out of the box: it reads the story and writes test cases using the project-agnostic conventions in [`.cursor/rules/test-case-style.mdc`](../.cursor/rules/test-case-style.mdc).
+The generator uses **generic rules by default** for every Jira project: [`.cursor/rules/test-case-style.mdc`](../.cursor/rules/test-case-style.mdc) plus the story's own vocabulary.
 
-A **project pack** is how you adjust that for one project — its vocabulary, title patterns, coverage habits, and examples. Packs are plain Markdown; there is no schema, no configuration keys, and no Jira field ids to look up.
+A **project pack** adds team-specific instructions on top of that base. It applies **only** when the Jira project key is listed in [`projects/config.json`](../projects/config.json) (or you set **`PROJECT_PACK`** for a single run). Several Jira keys can point at the same pack folder.
 
 ## Selection
 
-The pack folder is named after the **project key**, the part of the issue key before the dash.
+**Default: generic only.** Project packs are opt-in via config.
 
-| Story | Pack folder |
-|-------|-------------|
-| `PROJ-123` | `projects/PROJ/` |
-| `EPMRPP-114990` | `projects/EPMRPP/` |
+1. **`PROJECT_PACK`** — per-run override (workflow input or env var).
+2. **[`projects/config.json`](../projects/config.json)** — `packs` map: Jira project key → pack folder. **Required** to enable a pack for CI/IDE (except per-run override).
+3. **No entry** — generic [`.cursor/rules/test-case-style.mdc`](../.cursor/rules/test-case-style.mdc) only.
 
-If the folder does not exist, the agent uses the generic style rule alone and takes wording from the story itself. To point a run at a different folder, set the **project pack** workflow input (or the `PROJECT_PACK` environment variable) to a repo-relative path.
+Example — enable generic + EPMRPP pack only for `EPMRPP` stories:
 
-`scripts/build-ci-prompt.js` resolves the pack and states it in the CI prompt, so the agent is told explicitly which folder to read or that no pack exists.
+```json
+{
+  "packs": {
+    "EPMRPP": "projects/EPMRPP",
+    "RP": "projects/EPMRPP"
+  }
+}
+```
+
+| Story | In config? | Style |
+|-------|------------|--------|
+| `OTHER-123` | no | Generic only |
+| `EPMRPP-114990` | yes → `projects/EPMRPP` | Generic + project pack (pack wins on conflict) |
+
+`scripts/resolve-project-pack.js` implements the lookup; `scripts/build-ci-prompt.js` states the result in the CI prompt.
 
 ## Layout
 
 ```
 projects/
+  config.json    # Jira project key → pack folder (opt-in; generic when unlisted)
   PROJ/
     PROJECT.md     # required: the instructions the agent follows
     CONTEXT.md     # optional: granularity, coverage splits, calibration

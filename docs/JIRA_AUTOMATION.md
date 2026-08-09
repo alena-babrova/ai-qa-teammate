@@ -29,7 +29,7 @@ When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases**
      ```
 
      Optional **`cursor_model`**: Cursor Agent LLM id (same strings as the **Run workflow** dropdown, e.g. **`composer-2`**, **`composer-2.5`**, **`gpt-5`**). Omit to use repository variable **`CURSOR_AGENT_MODEL`** or the workflow default **`composer-2.5`**.
-     Optional **`project_pack`**: repo-relative pack folder, when you want to override the default **`projects/<PROJECT_KEY>`** lookup (see [`PROJECT_PACKS.md`](PROJECT_PACKS.md)).
+     Optional **`project_pack`**: repo-relative pack folder for a one-off run (overrides config; see [`PROJECT_PACKS.md`](PROJECT_PACKS.md)).
      Use your automation’s syntax to inject **`issue_key`**: bare key (**`PROJ-123`**) or a full **browse URL** (**`…/browse/PROJ-123`**). The workflow runs **`scripts/normalize-issue-input.js`** to resolve a key from either form.
 
 3. **Event type** must match the workflow: **`ai-test-generate`** (see `.github/workflows/generate-test-cases.yml`). The workflow file defines **`repository_dispatch`** handling; the API **`event_type`** stays **`ai-test-generate`** so existing integrations keep working.
