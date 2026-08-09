@@ -1,0 +1,59 @@
+---
+description: Project-agnostic conventions for manual test cases derived from a Jira issue (titles, preconditions, steps, expected results, API, analytics)
+alwaysApply: true
+---
+
+# Manual test case style (project-agnostic)
+
+## When this applies
+
+Whenever you **author** manual test cases from a Jira issue into Markdown. **Format only** — Jira reading, **`STORY_KEY`**, and the output contract are in **`.cursor/rules/jira-story-input.mdc`**; shape guidance is in **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**.
+
+**These are defaults.** When the story’s project has a pack at **`projects/<PROJECT_KEY>/`**, read **`PROJECT.md`** (and **`CONTEXT.md`** / **`examples/`** if present) and follow it; the pack **overrides** anything below. Without a pack, use these conventions and the story’s own vocabulary—**do not** import naming, product nouns, or scenario patterns from another project’s pack.
+
+**Test case titles** (Markdown **`##`**) must **not** include the issue key (**`STORY_KEY`**) or a Sub-task dispatch key when it differs. Traceability comes from the output folder **`generated/jira-tests/<STORY_KEY>/`** and the link at the top of the file, not from the title text.
+
+## Title line
+
+- **UI / functional:** `<Area>. <Page or screen>. <Behavior>` — segments separated by **period + space**.
+- **Permissions:** insert an extra segment: `<Area>. <Page>. Permissions. <Behavior>`.
+- **Analytics / telemetry:** `GA. <Scope>. <Page>. <Behavior>` (see **Analytics tests**).
+- **API:** `API. <Endpoint or controller>. <Actor/role>. <Behavior>`.
+- Name pages, screens, and controls **exactly as the requirements do**; put UI control and page labels in **double quotes** (`"Save"`, `"All Users"` page) and data placeholders in **single quotes** (`'Organization A'`, `'Project1'`).
+- **Behavior wording:** short and outcome-focused — Layout, Possible to…, Impossible to…, is displayed / is not displayed, can / cannot.
+- Use **technical identifiers** in titles when the requirements do (e.g. a field or parameter name).
+
+## Preconditions and steps
+
+- **Labels:** `*Preconditions:*` and `*Steps:*` (the variants `*Preconditions*:` / `*Pre-conditions:*` are acceptable—stay consistent within a file).
+- **Preconditions body:** short fixture sentences, one per line, describing state that exists **before** step 1 (user and role, existing data, feature flags, open tooling). **Do not** end a plain-line precondition with a period. Use `*italic*` for emphasis (`*not*`, `*External*`).
+- **Steps:** a single ordered list **`1.`**, **`2.`**, **`3.`**, … with **one action per line**, imperative voice. **Do not** end step text with a period—the dot after the number is the list marker (e.g. `1. Open the "Projects" page`, not `1. Open the "Projects" page.`).
+- **Navigation:** state the actor and entry point explicitly in the first steps or in preconditions (e.g. `Log in as <role>`, `Open the "<Page>" page`). Use the product’s own names for menus and controls; **do not** invent chrome that the requirements or design do not mention.
+
+## Expected results
+
+- **Map every expected line to a real step:** the number starting each expected line must be a **step index that exists** in *Steps*. **Do not** use a number greater than the last step index.
+- **Gaps are OK:** skip expected lines for steps that need no separate verification (e.g. only `3.` and `4.` when steps are `1.`–`4.`). Numbers must refer to **actual** steps, not a separate counter.
+- **Several checks for one step:** use **one** step number and group the detail under it with sub-bullets (` - ` or `*`) — **not** invented top-level numbers.
+- **Bullets:** ` - ` (space-hyphen-space) or leading `*` lines; stay consistent within one test case.
+- **UI inventory:** control names in **double quotes**, states as **enabled** / **disabled** / **default**, and success or error messages quoted verbatim from the requirements.
+- **Figma-linked stories:** when requirements include **`figma.com`** URLs and **`figmaReadRequired`** applies (**`jira-story-input.mdc`**), do **not** author UI control/layout inventory unless Figma was **successfully** read. When it was, prefer design-backed control names; do not invent menus or layout ungrounded in design plus explicit AC.
+
+## API tests
+
+- Point to the **endpoint**: HTTP **method + path** (and controller name when the requirements use one), e.g. `POST /organizations/{org_id}/users`.
+- Include the **request body** in steps as JSON when it matters; call out path and query parameters.
+- Steps: **send the request**, then **verify the response**; add a **database** verification step only when the requirements make persistence part of the acceptance criteria.
+- **Expected results:** the HTTP **status code**, then response fields or error messages as bullets; include stored-state outcomes when a DB step exists.
+- Cover the **permission matrix** (each role or org type that the requirements distinguish) and the **error codes** the endpoint defines.
+
+## Analytics tests
+
+Only when the requirements include an analytics or telemetry section (see the skill’s authoring rules).
+
+- Title starts with **`GA.`** and includes the **scope** (e.g. instance / organization / project level) and page before the action.
+- **Behavior in title:** `GA is sent …` for analytics ON; `GA is not sent … when GA OFF` (or the equivalent negative phrasing) for the paired OFF case. Prefer one user action per positive test.
+- **Preconditions:** analytics ON or OFF state, plus the tooling needed to observe the request (e.g. `Browser Dev tools are opened`, Network tab).
+- **Steps:** perform the UI action, then check the request payload of the analytics call in dev tools (repeat the check after each action when several events are asserted).
+- **Expected results:** map to the check step(s). Positive cases list the payload fields the spec defines (event name, category, place, element name, plus the common context fields the spec lists). Negative cases assert the analytics request is **not** sent. Use the **exact** event and `place` values from the story or analytics spec—**do not** invent alternatives.
+- Pair every **ON** case with an **OFF** case when the story adds new telemetry.

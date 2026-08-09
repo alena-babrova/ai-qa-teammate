@@ -1,15 +1,37 @@
 # ai-qa-teammate
 
-Turns a **Jira story or task** (the parent issue) into **Jira Test issues** with steps and expected results, using **Cursor** in **GitHub Actions**. You supply the issue key; the automation generates the cases, creates the Test work items in Jira, and checks that the run completed end-to-end.
+Turns a **Jira story or task** into a **Markdown file of manual test cases**, using **Cursor** in **GitHub Actions**. You supply the issue key; the automation reads the story (and the specs it links to), writes the test cases, and publishes them as a workflow artifact.
+
+**Nothing is written back to Jira.** The issue is an input: the pipeline never creates, updates, links, labels, or comments on Jira issues. The Atlassian MCP server runs with `READ_ONLY_MODE`, and the REST helper in `scripts/jira-client.js` exposes read calls only.
+
+**Any Jira project works.** Test cases are written with the project-agnostic conventions in [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc). A project that wants its own wording, coverage expectations, or examples can add a **project pack** — see [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md).
 
 ## How it runs (CI)
 
-The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** on a **single runner**: steps **1. Verify** (issue key, Jira, Figma, **one** MCP config render) then **2. Generate** (resolve story key, Cursor Agent, `tests.json` verification). The same workspace is reused—**`mcp.json` is not generated twice** (splitting across jobs would require artifacting secrets).
+The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** on a **single runner**: steps **1. Verify** (issue key, Jira read access, Figma, **one** MCP config render) then **2. Generate** (resolve story key, Cursor Agent, verification of the generated Markdown). The same workspace is reused—**`mcp.json` is not generated twice** (splitting across jobs would require artifacting secrets).
 
 ## Starting a run
 
-- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (`PROJ-123`) **or** paste the **browse URL** (`…/browse/PROJ-123`); then choose **Cursor Agent LLM** (default **`composer-2.5`**; run **`agent models`** locally if an id fails for your account).
+- **From GitHub:** **Actions** → **Generate Test Cases** → **Run workflow** → enter the Jira **issue key** (`PROJ-123`) **or** paste the **browse URL** (`…/browse/PROJ-123`); then choose **Cursor Agent LLM** (default **`composer-2.5`**; run **`agent models`** locally if an id fails for your account). Optionally set **project pack** to override the pack folder.
 - **From Jira:** You can drive the same workflow with automation (see [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md)).
+
+## Output
+
+Each run writes to **`generated/jira-tests/<STORY_KEY>/`**, where **`STORY_KEY`** is the **story** the workflow resolves from your input (the **parent** when you dispatch a **Sub-task**, otherwise the key you entered):
+
+| File | Contents |
+|------|----------|
+| `<STORY_KEY>-test-cases.md` | The deliverable: one `## ` heading per test case, each with *Preconditions*, *Steps*, and *Expected results* |
+| `meta.json` | Run metadata: story key, project key, project pack used, case count, Figma file keys read |
+| `requirement-signals.json` | Analytics and linked-spec signals extracted before the agent runs |
+
+The folder is uploaded as the **`generated-jira-tests-<ISSUE_KEY>`** artifact on every run, and the Markdown is also printed to the job summary. The directory is gitignored except a **`.gitkeep`**.
+
+## Project packs
+
+Without a pack, the agent follows the generic style rule and the story's own vocabulary. With a pack at `projects/<PROJECT_KEY>/`, it also follows that project's `PROJECT.md` (plus optional `CONTEXT.md` and `examples/`), which override the generic defaults. Packs are selected from the project key in the issue key, so `PROJ-123` uses `projects/PROJ/`.
+
+[`projects/EPMRPP/`](projects/EPMRPP/) is a full worked example. See [`projects/README.md`](projects/README.md) for how to add your own.
 
 ## Required GitHub secrets and variables
 
@@ -23,7 +45,7 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 |--------|----------|-------------------|
 | `CURSOR_API_KEY` | Yes | Cursor Agent in Actions |
 | `JIRA_USERNAME` | Yes | Jira account identifier for automation (email or username) |
-| `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps |
+| `JIRA_API_TOKEN` | Yes | Jira token for the agent and related steps (**read** access is enough) |
 | `CONFLUENCE_USER_EMAIL` | No | Confluence account identifier |
 | `CONFLUENCE_API_TOKEN` | No | Confluence personal access token |
 | `FIGMA_API_KEY` | No* | Figma API token for the Figma MCP server |
@@ -31,16 +53,16 @@ The **Generate Test Cases** workflow runs in **GitHub Actions** as **one job** o
 
 \* **Required** when merged requirements (Jira + linked GitLab/Confluence) contain any **`figma.com`** URL—see **`scripts/extract-requirement-signals.js`** and **`figmaReadRequired`** in **`requirement-signals.json`**.
 
-\** **Required** when the User Story description contains any **`git.epam.com`** `/-/blob/` requirements link (see **`scripts/extract-requirement-signals.js`**).
+\** **Required** when the story description links requirement files on your GitLab instance (`/-/blob/` URLs on the host from **`GITLAB_API_URL`**).
 
 **Repository variables** (**Variables** tab, not **Secrets**):
 
 | Variable | Required | Purpose (summary) |
 |----------|----------|-------------------|
 | `JIRA_URL` | Yes | Jira instance URL (required for CI) |
-| `CONFLUENCE_URL` | No | Confluence instance URL for Confluence MCP |
+| `CONFLUENCE_URL` | No | Confluence instance URL for Confluence MCP and link detection |
 | `CURSOR_AGENT_MODEL` | No | Default Cursor Agent model when the run does not pass one (see below) |
-| `GITLAB_API_URL` | No* | GitLab API base URL (e.g. `https://git.epam.com/api/v4`) |
+| `GITLAB_API_URL` | No* | GitLab API base URL (e.g. `https://gitlab.example.com/api/v4`) |
 
 `CONFLUENCE_*`, **`FIGMA_API_KEY`** (required for stories with Figma links), and **`GITLAB_*`** are optional when unused—when set, the agent can use those MCP servers for story-linked context. Passed into **`scripts/render-mcp-config.js`** → **`mcp.json`**.
 
@@ -50,13 +72,13 @@ For full detail on each secret and variable, see **[`docs/GITHUB_SECRETS.md`](do
 
 ## Other setup
 
-- **Jira Test issues, custom fields, and CI manifests:** [`.cursor/rules/jira-test-issues.mdc`](.cursor/rules/jira-test-issues.mdc).
-- **Conventions** for titles, steps, and expected results: [`.cursor/rules/`](.cursor/rules/).
-
-## Output
-
-Generated content for each run lives under **`generated/jira-tests/<STORY_KEY>/`**, where **`STORY_KEY`** is the **story** the workflow resolves from your input (the **parent** when you dispatch a **Sub-task**, otherwise the same as the key you entered). Gitignored except a **`.gitkeep`**. Helper scripts are listed in **`package.json`**.
+- **Jira reading, linked specs, and the output contract:** [`.cursor/rules/jira-story-input.mdc`](.cursor/rules/jira-story-input.mdc).
+- **Conventions** for titles, steps, and expected results: [`.cursor/rules/test-case-style.mdc`](.cursor/rules/test-case-style.mdc).
+- Helper scripts are listed in **`package.json`**; run **`npm test`** for the script unit tests.
 
 ## Documentation
 
+- [`docs/PROJECT_PACKS.md`](docs/PROJECT_PACKS.md) — adjusting style per Jira project.
 - [`docs/JIRA_AUTOMATION.md`](docs/JIRA_AUTOMATION.md) — wiring Jira to GitHub.
+- [`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md) — secrets and variables in detail.
+- [`docs/JIRA_MCP_OPTIONS.md`](docs/JIRA_MCP_OPTIONS.md) — choosing a Jira MCP server.

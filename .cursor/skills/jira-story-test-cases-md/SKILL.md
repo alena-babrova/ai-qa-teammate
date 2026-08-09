@@ -1,10 +1,10 @@
 ---
 name: jira-story-test-cases-md
 description: >-
-  Clarifies how Jira story content maps to manual test shape (Markdown or tests.json).
-  EPMRPP formatting is in .cursor/rules/jira-test-cases-epmrpp-style.mdc; Jira Test + CI
-  contract is in .cursor/rules/jira-test-issues.mdc. Style context in test-case-examples/CONTEXT.md;
-  full examples in test-case-examples/. Very optional Jira investigation (Epic closed stories,
+  Clarifies how Jira story content maps to manual test cases in Markdown. Jira reading and the
+  output contract are in .cursor/rules/jira-story-input.mdc; formatting is in
+  .cursor/rules/test-case-style.mdc, optionally overridden by a project pack at
+  projects/<PROJECT_KEY>/. Very optional read-only Jira investigation (Epic closed stories,
   Test library) when examples are insufficient. Use for Jira-sourced QA tests.
 ---
 
@@ -12,53 +12,47 @@ description: >-
 
 ## When this applies
 
-Deriving **manual** tests from a **Jira User Story** or **Epic** (description, AC, Gherkin, scope). **Do not** ask styling questions: use **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** for format rules and **`test-case-examples/CONTEXT.md`** for granularity, title patterns, and coverage splits (synthesized from all example suites below).
+Deriving **manual** tests from a **Jira User Story** or **Epic** (description, AC, Gherkin, scope) into a **Markdown** file. **Do not** ask styling questions: use **`.cursor/rules/test-case-style.mdc`** for format defaults and the project pack (below) when one exists.
 
-## Reference examples (`test-case-examples/`)
+**Read-only:** the Jira issue is input. Never create, update, link, label, or comment on Jira issues—see **`.cursor/rules/jira-story-input.mdc`** → **Read-only Jira**.
 
-Before authoring **`tests.json`**, Jira Tests, or Markdown:
+## Project pack (styling per project)
 
-1. **Read `test-case-examples/CONTEXT.md`** — consolidated patterns (granularity, title shapes, preconditions/steps/expected conventions, calibration counts).
-2. **Use the per-story `.md` files** when you need full step-level examples for a similar feature type.
+**`PROJECT_KEY`** is the part of **`STORY_KEY`** before the dash (`PROJ-123` → `PROJ`).
 
-| Example file | Use when the story is similar to |
-|--------------|-----------------------------------|
-| `tests/EPMRPP-89670-test-cases.md` | Organization-level UI page layout, table columns, pagination, permissions matrix |
-| `tests/EPMRPP-91802-test-cases.md` | Instance-level modal CRUD, field validation, org/project assignment, GA events |
-| `tests/EPMRPP-105682-test-cases.md` | Invitation / registration flow, email link activation, redirect after signup |
-| `tests/EPMRPP-111251-test-cases.md` | Filters side panel, filter combinations, “All Filters” UX, autocomplete fields |
-| `tests/EPMRPP-108273-test-cases.md` | Table customization (columns modal, localStorage, reset to default) |
-| `tests/EPMRPP-114379-test-cases.md` | Org settings integrations page, mixed UI + API + GA coverage |
-| `tests/EPMRPP-114952-test-cases.md` | Global plugin integration CRUD, validation, connection states, API permissions |
-| `tests/EPMRPP-114989-test-cases.md` | Project-level plugin page, empty vs configured states, device list |
-| `tests/EPMRPP-93348-test-cases.md` | REST API endpoint, role/org-type permission matrix, error codes |
-| `tests/EPMRPP-99095-test-cases.md` | REST API partial update, field validation, slug/name rules, auth errors |
-| `GA tests/GA-analytics-test-cases.md` | Google Analytics — `collect` payload, GA ON/OFF pairs, scope in title (Instance / Organization / Project level) |
+1. Check for **`projects/<PROJECT_KEY>/`** (or the folder given by **`PROJECT_PACK`** / the CI prompt).
+2. **Pack exists:** read **`PROJECT.md`**, then **`CONTEXT.md`** if present (granularity, title shapes, coverage splits, calibration counts), then the matching files under **`examples/`** when you need full step-level examples for a similar feature type. The pack **overrides** **`.cursor/rules/test-case-style.mdc`** on conflict.
+3. **No pack:** use **`.cursor/rules/test-case-style.mdc`** plus the story’s own vocabulary. **Do not** borrow another project’s product nouns, page names, or scenario patterns. If the story area is unfamiliar, the optional Jira investigation below is the fallback.
 
-## How format maps to deliverables
+See **`projects/README.md`** for pack layout.
 
-**EPMRPP content** (Preconditions, Steps, Expected results, title patterns) is defined **only** in **`jira-test-cases-epmrpp-style.mdc`**. This skill only explains **where** that content goes:
+## Deliverable
 
-| Deliverable | Mapping |
-|-------------|---------|
-| **Jira Test issue** | **Test Steps** (`customfield_19206`) + **Expected result** (`customfield_19207`) + **Test Library** (`customfield_24000`) + **Folder** (`customfield_24001`) + **Test Requirement** (`customfield_29300` → **`STORY_KEY`**; UI **Test Requirement**; example unset: [EPMRPP-115882](https://jiraeu.epam.com/browse/EPMRPP-115882); **Folder** = **`AI Generated`** (field id on [EPMRPP-114179](https://jiraeu.epam.com/browse/EPMRPP-114179); not **`EPMRPP`** root—**`jira-test-issues.mdc`**). **`priority`**: risk-based per **`jira-test-issues.mdc`** → **Test priority** (**do not** default every Test to **Major**). Steps string: *Preconditions* + *Steps* (labels; **`1.`…`N.`** or **`# `** per **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**). **Summary** ← EPMRPP title only (**no** **`STORY_KEY`** in title). **Story ↔ Test link (EPMRPP):** After create/update, link with type **`QaSpace test`** (**link type id `12700`**): **`inwardIssue` = `STORY_KEY` (Story)**, **`outwardIssue` = Test** so the **Story** UI shows **is tested by** (not **is a test for**). See **`jira-test-issues.mdc`** → **Linking Tests to the Story** and example [EPMRPP-114990](https://jiraeu.epam.com/browse/EPMRPP-114990). |
-| **`tests.json` (`tests[]`)** | One object per logical test. **`testSteps`** = same combined string as Jira Test Steps above. **`expectedResult`** = *Expected results* string. **`summary`** = Jira Test title. **`description`** = optional Markdown. |
-| **Markdown file** | One **`## <title>`** per test (**no** **`STORY_KEY`** in each **`##`** title); under each, *Preconditions* / *Steps* / *Expected results* blocks matching the format rule. Top link: **`https://<your-jira>/browse/<STORY_KEY>`**. Filename: **`<STORY_KEY>-test-cases.md`** unless the user specifies otherwise. |
-
-**Minimal Markdown shape** (repeat per case):
+One Markdown file at **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.md`**, plus **`meta.json`**. Full contract (paths, `meta.json` shape, empty story, Figma gate): **`.cursor/rules/jira-story-input.mdc`** → **Output contract**.
 
 ```markdown
-# Test cases: <short title from story summary>
+# Test cases: <STORY_KEY> — <short title from story summary>
+
 **User story:** https://…/browse/<STORY_KEY>
+
 ---
+
 ## <Area>. <Short behavior-focused title>
+
 *Preconditions:*
 …
+
 *Steps:*
 …
+
 *Expected results:*
 …
+
+---
 ```
+
+- One **`##`** heading per test case; **`STORY_KEY`** (and a differing Sub-task **`ISSUE_KEY`**) must not appear in any title.
+- **`meta.json`** **`caseCount`** must equal the number of **`##`** cases you wrote.
 
 ## Resolve **`STORY_KEY`** (always first)
 
@@ -66,14 +60,14 @@ Before authoring **`tests.json`**, Jira Tests, or Markdown:
 2. **`jira_get_issue`** with **`issuetype`**, **`parent`**, **`summary`**, **`description`**, **`priority`**, **`status`** (and AC/DoD-style fields your MCP exposes). Set **`update_history: false`** on reads when the tool supports it.
 3. If Sub-task (or equivalent) and **`parent.key`** exists → **`STORY_KEY = parent.key`**. Original key is **trigger only**; do **not** use Sub-task body for scenarios.
 4. Else **`STORY_KEY`** = that issue’s key.
-5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author **`tests[]`** or Markdown cases until this passes. On failure: **do not** write **`tests.json`** / **`meta.json`** in CI (job must fail at verify)—see **`.cursor/rules/jira-test-issues.mdc`** (**Pre-generation MCP gate**).
-6. Use that same response for requirements: **`description`**, **`priority`** (for calibrating each Jira Test **priority**), AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence**, **Figma**, or **EPAM GitLab** (**`git.epam.com`**) URLs, use the **Atlassian** (Confluence), **Figma**, and **GitLab** MCP servers to **read** linked pages, designs, or GitLab files **before** authoring tests—see **`.cursor/rules/jira-test-issues.mdc`** → **Story-linked Confluence, Figma, and GitLab**.
+5. **MCP pre-check (before generating tests):** Call **`jira_get_issue(STORY_KEY)`** via Jira MCP. **Pass** only if the call succeeds, Jira **`summary`** (issue title) is **non-empty**, and **`description`** is **present** in the payload (may be empty). **Do not** author cases until this passes. On failure: **do not** write the Markdown file or **`meta.json`** in CI (the job must fail at verify)—see **`.cursor/rules/jira-story-input.mdc`** (**Pre-generation MCP gate**).
+6. Use that same response for requirements: **`description`**, **`priority`**, AC/DoD custom fields, etc. (no second fetch unless retrying after error). If those fields (or comments you fetch) contain **Confluence**, **Figma**, or **GitLab** URLs, use the **Atlassian** (Confluence), **Figma**, and **GitLab** MCP servers to **read** linked pages, designs, or files **before** authoring tests—see **`.cursor/rules/jira-story-input.mdc`** → **Story-linked Confluence, Figma, and GitLab**.
 
-## Investigating coverage in Jira (**very optional**)
+## Investigating coverage in Jira (**very optional**, read-only)
 
-**Default path:** **`test-case-examples/CONTEXT.md`** + matching **`tests/EPMRPP-*-test-cases.md`** files + **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`**. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
+**Default path:** the project pack (**`PROJECT.md`** + **`CONTEXT.md`** + **`examples/`**) or, without a pack, **`.cursor/rules/test-case-style.mdc`** and the story itself. That is enough for most stories—**do not** browse Jira unless you still lack ideas for **which** cases to write or **how** to split them.
 
-**When to consider (only if needed):** Repo examples do not cover the story area, or you want extra signal on **coverage patterns** (permissions matrix depth, validation cases, GA pairs) before drafting **`tests[]`**.
+**When to consider (only if needed):** the project has no pack, the pack’s examples do not cover the story area, or you want extra signal on **coverage patterns** (permissions matrix depth, validation cases, analytics pairs) before drafting cases.
 
 ### A. Related Epic → **Closed** stories → linked Tests
 
@@ -87,10 +81,10 @@ While planning **which** test cases to create (after **`jira_get_issue(STORY_KEY
 3. **Pick 1–3 closed stories** whose **summary** is closest to the current story (same page, plugin, controller, or feature area)—not every child of the Epic.
 4. For each chosen story, list linked Tests:  
    `issue in linkedIssues(<CLOSED_STORY_KEY>) AND issuetype = Test ORDER BY key ASC`  
-   Fetch **`summary`**, **`customfield_19206`**, **`customfield_19207`** for a **small sample** (e.g. **3–5** Tests per story, or skim titles only if the suite is large).
-5. **Use for investigation only** — infer which scenario types the team already tested nearby (layout, Impossible to…, Permissions., API errors, GA ON/OFF). **Author new cases from the current story’s AC**; do not copy unrelated closed-story scenarios verbatim.
+   Fetch **`summary`** and the project’s test step / expected result fields for a **small sample** (e.g. **3–5** Tests per story, or skim titles only if the suite is large). If you do not know those field ids, use **`jira_search_fields`** for *Test steps* / *Expected result*, or read the Test **`description`**.
+5. **Use for investigation only** — infer which scenario types the team already tested nearby (layout, Impossible to…, Permissions., API errors, analytics ON/OFF). **Author new cases from the current story’s AC**; do not copy unrelated closed-story scenarios verbatim.
 
-**Skip** if there is no Epic, no closed siblings, no linked Tests, or MCP fails—proceed with repo examples + story requirements.
+**Skip** if there is no Epic, no closed siblings, no linked Tests, or MCP fails—proceed with the pack (or generic rules) plus story requirements.
 
 ### B. Test library keyword search
 
@@ -98,58 +92,57 @@ If Epic siblings are not enough (or Epic is missing):
 
 1. **Stay read-only** — **`Test`** issues only; never mutate the library for discovery.
 2. **Targeted JQL**, e.g.:
-   - `project = EPMRPP AND issuetype = Test AND summary ~ "<Area or Page from story>" ORDER BY key DESC`
-   - `project = EPMRPP AND issuetype = Test AND summary ~ "API. <Controller name>" ORDER BY key DESC`
-3. **Sample lightly** — **3–5** hits; fetch steps/expected; infer prefix, numbering, bundling.
+   - `project = <PROJECT_KEY> AND issuetype = Test AND summary ~ "<Area or Page from story>" ORDER BY key DESC`
+   - `project = <PROJECT_KEY> AND issuetype = Test AND summary ~ "API. <Endpoint or controller>" ORDER BY key DESC`
+3. **Sample lightly** — **3–5** hits; read steps/expected; infer prefix, numbering, bundling.
 4. **Still author from the current story** — library Tests inform **shape/coverage ideas** only.
-5. **Skip silently on failure** — do not narrate in CI output or Jira comments.
+5. **Skip silently on failure** — do not narrate in CI output.
 
 **User-explicit mirror:** When the user **asks** to mirror specific **`Test`** keys or linked Tests on a given parent, follow **Reference Jira `Test` issues (user request)** below instead of this investigation path.
 
 ## Reference Jira `Test` issues (user request)
 
-Use when the user **explicitly** asks to mirror **existing Jira `Test`** issues or provides **`Test`** keys/URLs or a **parent** Story/Task/Epic whose **linked** Tests should define granularity and tone. Stay **compatible** with **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** unless the user requests strict copy from Jira.
+Use when the user **explicitly** asks to mirror **existing Jira `Test`** issues or provides **`Test`** keys/URLs or a **parent** Story/Task/Epic whose **linked** Tests should define granularity and tone. Reading is fine; **writing back to Jira is not**.
 
-- **Direct `Test` key(s):** For each key, **`jira_get_issue`** with fields at least **`summary`**, **`customfield_19206`** (Test Steps), **`customfield_19207`** (Expected result). Mirror summary prefix patterns, section labels, numbering (`# ` vs **`1.`**), and bundling when helpful.
+- **Direct `Test` key(s):** For each key, **`jira_get_issue`** with at least **`summary`**, plus the project’s test step and expected result fields (or **`description`** when the project stores them there). Mirror summary prefix patterns, section labels, numbering, and bundling when helpful.
 - **Parent Story/Task/Epic only:** List linked Tests, e.g. JQL  
   `issue in linkedIssues(<PARENT_KEY>) AND issuetype = Test ORDER BY key ASC`  
-  (paginate with your MCP’s **`limit`** / **`start_at`**). Then fetch **`customfield_19206`** / **`customfield_19207`** per **`Test`** key. **If zero linked Tests:** say so; do **not** fabricate a reference suite—proceed from the story using CONTEXT + EPMRPP rule, or ask the user for **`Test`** keys.
-- **Wrong field IDs:** If step/expected fields are empty, use **`jira_search_fields`** (or equivalent) for **Test steps** / **Expected result** for that project and re-fetch.
+  (paginate with your MCP’s **`limit`** / **`start_at`**). Then fetch the step/expected fields per **`Test`** key. **If zero linked Tests:** say so; do **not** fabricate a reference suite—proceed from the story using the pack and style rule, or ask the user for **`Test`** keys.
+- **Wrong field IDs:** If step/expected fields come back empty, use **`jira_search_fields`** (or equivalent) for **Test steps** / **Expected result** for that project and re-fetch.
 
 ## Authoring rules
 
 - Map story **acceptance criteria** and **numbered / Gherkin** scenarios to **discrete** test cases; split when an explicit reference suite (above) would split.
 - **Localization / languages:** Do **not** add cases focused on translations, language switching, locale-only formatting, RTL, or multilingual copy—unless the user **explicitly** asks.
-- **Google Analytics / telemetry:** **Require** **`GA.`** tests when **any** loaded requirements source (Jira body/AC fields, **successfully fetched** GitLab/Confluence/Figma content) includes an **Analytics (GA4)** section, analytics acceptance checklist, GA4 event numbering, or **`collect`** / **`page_view`** telemetry AC. Linked specs count as part of the story—not only Jira plain text. Follow **`test-case-examples/CONTEXT.md`**: at minimum one **GA ON** and one **GA OFF** pair (see **`test-case-examples/GA tests/GA-analytics-test-cases.md`**). Use **Minor** priority for telemetry-only cases unless the story is GA-only. **Respect out of scope:** do not add GA for actions explicitly deferred to another user story (e.g. button clicks covered elsewhere).
+- **Analytics / telemetry:** **Require** **`GA.`** tests when **any** loaded requirements source (Jira body/AC fields, **successfully fetched** GitLab/Confluence/Figma content) includes an **Analytics (GA4)** section, analytics acceptance checklist, GA4 event numbering, or **`collect`** / **`page_view`** telemetry AC. Linked specs count as part of the story—not only Jira plain text. At minimum author one **analytics ON** and one **analytics OFF** case (**`.cursor/rules/test-case-style.mdc`** → **Analytics tests**; the project pack may define exact payload wording). **Respect out of scope:** do not add analytics cases for actions explicitly deferred to another user story.
 - Respect **out of scope** in the story: do **not** add API/backend contract tests if the story says there is **no** backend/API—unless you are mirroring a reference suite **and** the user asked for that mirroring.
 - Add **edge / regression** cases when the story implies them (persistence, permissions, multiple tabs, large viewport, etc.).
 
 ## Empty story
 
-Applies **only after** a **successful** **`jira_get_issue(STORY_KEY)`** shows **description** has no substantive body **and** AC/DoD fields are empty. Then: **no** invented tests, **no** Sub-task backfill. **CI:** **`tests: []`**, **`meta.json`** with **`mcpCreatedKeys: []`** — **`jira-test-issues.mdc`**. **Markdown:** short note only, no fake **`##`** cases.
+Applies **only after** a **successful** **`jira_get_issue(STORY_KEY)`** shows **description** has no substantive body **and** AC/DoD fields are empty. Then: **no** invented tests. Write the Markdown file with its header plus a short note that the story has no testable content (no fake **`##`** cases), and **`meta.json`** with **`"caseCount": 0`** and **`"empty": true`** — **`.cursor/rules/jira-story-input.mdc`**.
 
-If Jira tools are **unavailable** or the fetch **errors**, **do not** use this path—**do not** write empty **`tests.json`** as if the story were empty. Fetch in **GitHub Actions** or **IDE with MCP** first (see **`jira-test-issues.mdc`** → **Jira fetch required**).
+If Jira tools are **unavailable** or the fetch **errors**, **do not** use this path—**do not** write an empty deliverable as if the story were empty. Fetch in **GitHub Actions** or **IDE with MCP** first (see **`jira-story-input.mdc`** → **Jira fetch required**).
 
 ## GitHub Actions (this repo)
 
-Primary output is **`generated/jira-tests/<STORY_KEY>/tests.json`**, Jira Test issues via MCP, and **`meta.json`**. In CI, **`scripts/build-ci-prompt.js`** substitutes **`__ISSUE_KEY__`** / **`__STORY_KEY__`** into **`prompts/ci-generate-tests.md`** and points here; full Jira contract: **`.cursor/rules/jira-test-issues.mdc`**. On reruns, **fetch linked Tests** for **`STORY_KEY`** first; **update** matching issues, **create** only new ones—see **Sync with existing Jira Tests** in **`jira-test-issues.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or summaries when it differs from **`STORY_KEY`**.
+The output is **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.md`** plus **`meta.json`**, uploaded as a workflow artifact. **`scripts/build-ci-prompt.js`** substitutes **`__ISSUE_KEY__`**, **`__STORY_KEY__`**, **`__PROJECT_KEY__`**, and **`__PROJECT_PACK__`** into **`prompts/ci-generate-tests.md`** and points here; full contract: **`.cursor/rules/jira-story-input.mdc`**. Do **not** use Sub-task **`ISSUE_KEY`** for paths or titles when it differs from **`STORY_KEY`**. Nothing is written back to Jira.
 
 ## Interaction with other skills
 
-- **`import-jira-tests-to-agentic-qa`:** **imports existing** Jira Tests into Agentic QA (read-only). This skill **authors** Markdown **`tests.json`** / Jira-shaped content **from a story**; it does not replace Jira Test creation when the user or CI requests MCP sync—see **`jira-test-issues.mdc`**.
+- **`import-jira-tests-to-agentic-qa`:** **imports existing** Jira Tests into Agentic QA (read-only). This skill **authors** Markdown test cases **from a story**.
 
 ## Checklist
 
 - [ ] **`STORY_KEY`** resolved; requirements from **story** only.
-- [ ] **Reference context:** **`test-case-examples/CONTEXT.md`** read; relevant **`tests/EPMRPP-*-test-cases.md`** examples consulted for similar story shape.
+- [ ] **Project pack** checked at **`projects/<PROJECT_KEY>/`**; when present, **`PROJECT.md`** (+ **`CONTEXT.md`** / **`examples/`**) followed; when absent, generic style rule only with no borrowed vocabulary.
 - [ ] **MCP pre-check** passed (non-empty Jira **`summary`**, **`description`** field present) before authoring.
-- [ ] Confluence / GitLab MCP used for **story-linked** URLs only (**`jira-test-issues.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** browsing **git.epam.com** beyond links from the story); fetch **nested** authoritative GA4/Confluence/Figma links cited inside fetched specs when needed. On **Confluence/GitLab** MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output. When **`figmaReadRequired`** (signals or any **`figma.com`** URL in loaded requirements): **mandatory** Figma MCP—on failure write **`figma-read-failure.json`**, **no** tests/Jira sync, **no** invented UI (**`jira-test-issues.mdc`**).
-- [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** tests and align **`collect`** payload with KB/spec (see **Authoring rules**). If **`figmaReadRequired`** is true, set **`meta.json`** **`figmaFileKeysRead`** after successful Figma MCP reads.
-- [ ] Empty story → no fabricated tests **only after successful Jira fetch** (see **Empty story** above).
+- [ ] Confluence / GitLab MCP used for **story-linked** URLs only (**`jira-story-input.mdc`**); dedupe URLs, **minimize** calls (one success per distinct target; **no** repository browsing beyond links from the story); fetch **nested** authoritative analytics/Confluence/Figma links cited inside fetched specs when needed. On **Confluence/GitLab** MCP read failure, continue from Jira **without** narrating errors or 429 in streamed output. When **`figmaReadRequired`** (signals or any **`figma.com`** URL in loaded requirements): **mandatory** Figma MCP—on failure write **`figma-read-failure.json`**, **no** deliverable, **no** invented UI.
+- [ ] **CI:** Read **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** when present; if **`gaCoverageRequired`** is true, include ≥2 **`GA.`** cases and align payload details with the KB/spec. If **`figmaReadRequired`** is true, set **`meta.json`** **`figmaFileKeysRead`** after successful Figma MCP reads.
+- [ ] Empty story → no fabricated tests **only after successful Jira fetch**.
 - [ ] **Optional Jira investigation:** Epic → **Closed** sibling stories → linked **`Test`** samples, and/or library JQL—**read-only**, small sample only; skipped when not needed.
 - [ ] **User-requested `Test` mirror:** fetched only when the user explicitly asked; **zero linked Tests** handled without inventing a suite.
-- [ ] **Localization / GA / out-of-scope** judgment applied per **Authoring rules**.
-- [ ] Preconditions / Steps / Expected match **`jira-test-cases-epmrpp-style.mdc`**.
-- [ ] **`tests.json`** / Jira fields aligned with **How format maps** table above (**`customfield_29300`** **Test Requirement** → **`STORY_KEY`**; **`priority`** per **Test priority**—not all **Major**).
-- [ ] If the story already has linked Tests: **no duplicates**—**update** by matching **summary**, **create** only gaps (**`jira-test-issues.mdc`**).
-- [ ] After successful Jira sync: completion **comment only on the Test Design Sub-task** (**never** on **`STORY_KEY`**) per **`jira-test-issues.mdc`** → **Test Design sub-task comment after successful test generation** (headless CI: **`__ISSUE_KEY__`** when **`__ISSUE_KEY__` ≠ `__STORY_KEY__`**; otherwise **omit**).
+- [ ] **Localization / analytics / out-of-scope** judgment applied per **Authoring rules**.
+- [ ] Preconditions / Steps / Expected match **`.cursor/rules/test-case-style.mdc`** and the active pack.
+- [ ] Markdown written to **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.md`**; **`meta.json`** **`caseCount`** matches the **`##`** case count.
+- [ ] **Nothing written to Jira** — no issues created or updated, no links, no comments.

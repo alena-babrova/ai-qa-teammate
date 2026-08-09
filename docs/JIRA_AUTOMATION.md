@@ -2,7 +2,9 @@
 
 ## Goal
 
-When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) writes **`generated/jira-tests/<STORY_KEY>/tests.json`** (resolved story key—parent when the labeled issue is a Sub-task), creates and links **Test** issues to that **story** in Jira **via Jira MCP only**, and writes **`meta.json`** so CI can verify success.
+When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases** workflow on GitHub so **Cursor Agent** (in Actions only) writes **`generated/jira-tests/<STORY_KEY>/<STORY_KEY>-test-cases.md`** (resolved story key—parent when the labeled issue is a Sub-task) plus **`meta.json`**, and uploads them as a workflow artifact.
+
+**The run posts nothing back to Jira.** The labeled issue is read-only input: no comments, no Test issues, no links, no label changes. Pick up the results from the workflow artifact or the job summary.
 
 ## Jira Automation rule (outline)
 
@@ -27,10 +29,13 @@ When a Jira issue is labeled **`ai_ready`**, trigger the **Generate Test Cases**
      ```
 
      Optional **`cursor_model`**: Cursor Agent LLM id (same strings as the **Run workflow** dropdown, e.g. **`composer-2`**, **`composer-2.5`**, **`gpt-5`**). Omit to use repository variable **`CURSOR_AGENT_MODEL`** or the workflow default **`composer-2.5`**.
+     Optional **`project_pack`**: repo-relative pack folder, when you want to override the default **`projects/<PROJECT_KEY>`** lookup (see [`PROJECT_PACKS.md`](PROJECT_PACKS.md)).
      Use your automation’s syntax to inject **`issue_key`**: bare key (**`PROJ-123`**) or a full **browse URL** (**`…/browse/PROJ-123`**). The workflow runs **`scripts/normalize-issue-input.js`** to resolve a key from either form.
 
 3. **Event type** must match the workflow: **`ai-test-generate`** (see `.github/workflows/generate-test-cases.yml`). The workflow file defines **`repository_dispatch`** handling; the API **`event_type`** stays **`ai-test-generate`** so existing integrations keep working.
 
 ## After a successful run
 
-Consider a follow-up automation to remove **`ai_ready`** or add **`ai_tests_generated`** to avoid duplicate dispatches. If the workflow is triggered again for the same story, the agent should avoid creating duplicate Tests (e.g. check Jira with MCP before creating).
+Download the **`generated-jira-tests-<ISSUE_KEY>`** artifact, or read the test cases from the workflow job summary.
+
+Consider a follow-up automation to remove **`ai_ready`** or add **`ai_tests_generated`** to avoid duplicate dispatches. Re-running for the same story simply regenerates the Markdown; nothing is duplicated in Jira because nothing is written there.

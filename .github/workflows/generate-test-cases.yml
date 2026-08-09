@@ -12,6 +12,10 @@ on:
         description: Jira issue key (PROJ-123) or browse URL (…/browse/PROJ-123)
         required: true
         type: string
+      project_pack:
+        description: Project pack folder (defaults to projects/<PROJECT_KEY> when it exists)
+        required: false
+        type: string
       cursor_model:
         description: Cursor Agent LLM
         required: true
@@ -35,6 +39,7 @@ jobs:
     timeout-minutes: 60
     env:
       ISSUE_KEY: ${{ github.event.inputs.issue_key || github.event.client_payload.issue_key }}
+      PROJECT_PACK: ${{ github.event.inputs.project_pack || github.event.client_payload.project_pack }}
       # Instance URLs: repository Variables only (not Secrets)—see docs/GITHUB_SECRETS.md
       JIRA_URL: ${{ vars.JIRA_URL }}
       CONFLUENCE_URL: ${{ vars.CONFLUENCE_URL }}
@@ -73,7 +78,7 @@ jobs:
             exit 1
           fi
           if [ -z "${JIRA_USERNAME}" ] || [ -z "${JIRA_API_TOKEN}" ]; then
-            echo "Set repository secrets JIRA_USERNAME and JIRA_API_TOKEN for Jira read/write."
+            echo "Set repository secrets JIRA_USERNAME and JIRA_API_TOKEN for Jira read access."
             exit 1
           fi
 
@@ -84,12 +89,8 @@ jobs:
             exit 1
           fi
 
-      - name: "1. Verify — Jira read/write and pipeline start comment"
-        env:
-          GITHUB_SERVER_URL: ${{ github.server_url }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: node scripts/jira-pipeline-start.js
+      - name: "1. Verify — Jira read access (read-only pipeline)"
+        run: node scripts/verify-jira-access.js
 
       - name: "1. Verify — Figma API access"
         run: set -euo pipefail && node scripts/verify-figma-access.js
@@ -150,42 +151,29 @@ jobs:
           "${AGENT_BIN}" --trust --approve-mcps --force --model "${MODEL}" -p "${PROMPT}" --print \
             --output-format stream-json --stream-partial-output
 
-      - name: "2. Generate — verify MCP created all Test issues in Jira"
-        run: node scripts/verify-mcp-jira.js "${STORY_KEY}"
+      - name: "2. Generate — verify generated test cases"
+        run: node scripts/verify-generated-tests.js "${STORY_KEY}"
 
-      - name: Log generated test cases to job log
+      - name: Publish generated test cases to job summary
         if: always()
         run: |
           for KEY in "${STORY_KEY}" "${ISSUE_KEY}"; do
             [ -z "${KEY}" ] && continue
-            DIR="generated/jira-tests/${KEY}"
-            if [ -f "${DIR}/tests.json" ]; then
+            FILE="generated/jira-tests/${KEY}/${KEY}-test-cases.md"
+            if [ -f "${FILE}" ]; then
+              cat "${FILE}" >> "${GITHUB_STEP_SUMMARY}"
               echo "::group::Generated test cases (${KEY})"
-              echo "--- tests.json ---"
-              python3 -m json.tool "${DIR}/tests.json" 2>/dev/null || cat "${DIR}/tests.json"
-              if [ -f "${DIR}/meta.json" ]; then
-                echo ""
-                echo "--- meta.json ---"
-                python3 -m json.tool "${DIR}/meta.json" 2>/dev/null || cat "${DIR}/meta.json"
-              fi
+              cat "${FILE}"
               echo "::endgroup::"
               exit 0
             fi
           done
-          echo "No generated/jira-tests/.../tests.json found to log."
+          echo "No generated/jira-tests/.../<KEY>-test-cases.md found to log."
 
-      - name: Upload generated output on failure
-        if: failure()
+      - name: Upload generated test cases
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: generated-jira-tests-${{ env.ISSUE_KEY }}
           path: generated/jira-tests/
           if-no-files-found: ignore
-
-      - name: Notify Jira on failure
-        if: failure()
-        env:
-          GITHUB_SERVER_URL: ${{ github.server_url }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: node scripts/notify-jira-failure.js

@@ -2,10 +2,13 @@
 /**
  * Writes the Cursor Agent CI prompt to stdout.
  * Env: ISSUE_KEY (required) — workflow dispatch key (often a Sub-task; trigger only when STORY_KEY differs).
- * STORY_KEY (optional; defaults to ISSUE_KEY) — set by workflow after resolve-output-key.js: canonical story
- * (parent when dispatch is Sub-task). The agent must use STORY_KEY for requirements, generated/jira-tests/ paths,
- * and linking Tests — never substitute ISSUE_KEY when the two differ. Discover linked Tests on STORY_KEY first; update existing, create only missing (jira-test-issues.mdc). Test titles (tests[].summary) must not contain STORY_KEY or ISSUE_KEY when they differ (see jira-test-cases-epmrpp-style.mdc). After successful sync, post the completion summary comment only on ISSUE_KEY when ISSUE_KEY ≠ STORY_KEY (Test Design Sub-task), never on STORY_KEY (jira-test-issues.mdc).
- * Repo contract: prompts/ci-generate-tests.md → .cursor/skills/jira-story-test-cases-md/SKILL.md + .cursor/rules/jira-test-issues.mdc.
+ * STORY_KEY (optional; defaults to ISSUE_KEY) — set by the workflow after resolve-output-key.js: canonical
+ * story (parent when dispatch is a Sub-task). The agent must use STORY_KEY for requirements and for the
+ * generated/jira-tests/ output path — never substitute ISSUE_KEY when the two differ. Test case titles must
+ * not contain either key (see .cursor/rules/test-case-style.mdc).
+ * PROJECT_PACK (optional) — pack folder override; defaults to projects/<PROJECT_KEY> when that folder exists.
+ * Repo contract: prompts/ci-generate-tests.md → .cursor/skills/jira-story-test-cases-md/SKILL.md +
+ * .cursor/rules/jira-story-input.mdc.
  */
 
 import fs from "fs";
@@ -21,6 +24,15 @@ if (!issueKey) {
   process.exit(1);
 }
 const storyKey = process.env.STORY_KEY?.trim() || issueKey;
+const projectKey = storyKey.split("-")[0];
+
+function resolveProjectPack() {
+  const override = process.env.PROJECT_PACK?.trim();
+  const candidate = override || path.join("projects", projectKey);
+  return fs.existsSync(path.join(root, candidate)) ? candidate : null;
+}
+
+const projectPack = resolveProjectPack();
 
 const promptPath = path.join(root, "prompts", "ci-generate-tests.md");
 if (!fs.existsSync(promptPath)) {
@@ -31,4 +43,11 @@ if (!fs.existsSync(promptPath)) {
 let text = fs.readFileSync(promptPath, "utf8");
 text = text.replace(/__ISSUE_KEY__/g, issueKey);
 text = text.replace(/__STORY_KEY__/g, storyKey);
+text = text.replace(/__PROJECT_KEY__/g, projectKey);
+text = text.replace(
+  /__PROJECT_PACK__/g,
+  projectPack
+    ? `\`${projectPack}/\` — read \`${projectPack}/PROJECT.md\` (plus \`CONTEXT.md\` and \`examples/\` when present); it overrides the generic style rule`
+    : "none — no pack exists for this project; use `.cursor/rules/test-case-style.mdc` and the story's own vocabulary, and do not borrow another project's wording",
+);
 process.stdout.write(text);

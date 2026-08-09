@@ -7,10 +7,10 @@ import path from "path";
 
 /**
  * @param {string} outDir canonical generated/jira-tests/<STORY_KEY>
- * @param {{ tests: Array<{ summary?: string; testSteps?: string; expectedResult?: string }> }} manifest
+ * @param {Array<{ title: string, body: string }>} cases parsed from the Markdown deliverable
  * @returns {string | null} error message or null if OK
  */
-export function validateGaCoverage(outDir, manifest) {
+export function validateGaCoverage(outDir, cases) {
   const signalsPath = path.join(outDir, "requirement-signals.json");
   if (!fs.existsSync(signalsPath)) {
     return null;
@@ -31,13 +31,11 @@ export function validateGaCoverage(outDir, manifest) {
     return null;
   }
 
-  const gaTests = manifest.tests.filter(
-    (t) => typeof t.summary === "string" && t.summary.trim().startsWith("GA."),
-  );
+  const gaCases = cases.filter((c) => c.title.trim().startsWith("GA."));
 
-  if (gaTests.length < 2) {
-    const summaries = manifest.tests.map((t) => t.summary).join("; ");
-    return `GA coverage required (requirement-signals.json) but found ${gaTests.length} test(s) with summary starting with "GA." (need at least 2: ON + OFF). All summaries: ${summaries}`;
+  if (gaCases.length < 2) {
+    const titles = cases.map((c) => c.title).join("; ");
+    return `GA coverage required (requirement-signals.json) but found ${gaCases.length} test case(s) titled "GA.…" (need at least 2: ON + OFF). All titles: ${titles}`;
   }
 
   const hints = Array.isArray(signals.gaHints) ? signals.gaHints : [];
@@ -45,12 +43,9 @@ export function validateGaCoverage(outDir, manifest) {
     if (!hint.startsWith("place:")) continue;
     const placeValue = hint.slice("place:".length);
     if (!placeValue) continue;
-    const found = gaTests.some((t) => {
-      const blob = `${t.testSteps ?? ""}\n${t.expectedResult ?? ""}`;
-      return blob.includes(placeValue);
-    });
+    const found = gaCases.some((c) => c.body.includes(placeValue));
     if (!found) {
-      return `GA tests must reference authoritative place "${placeValue}" in testSteps or expectedResult (gaHints: ${hints.join(", ")}).`;
+      return `GA test cases must reference authoritative place "${placeValue}" in their steps or expected results (gaHints: ${hints.join(", ")}).`;
     }
   }
 

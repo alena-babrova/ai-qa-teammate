@@ -5,7 +5,8 @@
  *
  * Env: STORY_KEY, JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN
  * Optional: CONFLUENCE_URL, CONFLUENCE_API_TOKEN, CONFLUENCE_USER_EMAIL
- * Required when Jira description contains git.epam.com /-/blob/ links: GITLAB_API_URL, GITLAB_PERSONAL_ACCESS_TOKEN
+ * Required when the Jira description contains GitLab /-/blob/ links: GITLAB_API_URL, GITLAB_PERSONAL_ACCESS_TOKEN
+ * GitLab and Confluence hosts are derived from GITLAB_API_URL / CONFLUENCE_URL (see requirement-links.js).
  */
 
 import fs from "fs";
@@ -13,14 +14,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createJiraClient } from "./jira-client.js";
 import { extractFigmaSignals, figmaRestPreflightFile } from "./figma-signals.js";
+import {
+  hostFromUrl,
+  gitLabBlobUrls,
+  parseGitLabBlobUrl,
+  isGitLabOnlyDescription,
+  confluencePageUrls,
+  confluencePageIdFromUrl,
+} from "./requirement-links.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-
-const GITLAB_BLOB_RE =
-  /https?:\/\/git\.epam\.com\/([^/\s]+)\/([^/\s]+)\/-\/blob\/([^/\s#]+)\/([^\s)]+)/gi;
-const CONFLUENCE_PAGE_RE =
-  /https?:\/\/[^\s)]*(?:kb\.epam\.com|confluence\.[^\s/]+)\/spaces\/[^/]+\/pages\/(\d+)[^\s)]*/gi;
 
 /** @param {unknown} desc */
 function descriptionToPlainText(desc) {
@@ -52,54 +56,14 @@ function extractAdfText(nodes) {
   return out;
 }
 
-/** @param {string} text */
-function uniqueGitLabBlobUrls(text) {
-  const urls = new Set();
-  let m;
-  GITLAB_BLOB_RE.lastIndex = 0;
-  while ((m = GITLAB_BLOB_RE.exec(text)) !== null) {
-    urls.add(m[0].replace(/[).,]+$/, ""));
-  }
-  return [...urls];
-}
-
-/** @param {string} url */
-function parseGitLabBlobUrl(url) {
-  const re =
-    /https?:\/\/git\.epam\.com\/([^/]+)\/([^/]+)\/-\/blob\/([^/?#]+)\/(.+?)(?:\?[^#]*)?(?:#.*)?$/i;
-  const m = url.match(re);
-  if (!m) return null;
-  return {
-    projectPath: `${m[1]}/${m[2]}`,
-    ref: m[3],
-    filePath: decodeURIComponent(m[4]),
-  };
-}
-
-/** @param {string} text */
-function uniqueConfluencePageUrls(text) {
-  const urls = new Set();
-  let m;
-  CONFLUENCE_PAGE_RE.lastIndex = 0;
-  while ((m = CONFLUENCE_PAGE_RE.exec(text)) !== null) {
-    urls.add(m[0].replace(/[).,]+$/, ""));
-  }
-  return [...urls];
-}
-
-/** @param {string} url */
-function confluencePageIdFromUrl(url) {
-  const m = url.match(/\/pages\/(\d+)/);
-  return m ? m[1] : null;
-}
-
 /**
- * @param {string} apiBase e.g. https://git.epam.com/api/v4
+ * @param {string} apiBase e.g. https://gitlab.example.com/api/v4
  * @param {string} token
  * @param {string} blobUrl
+ * @param {string | null} host
  */
-async function fetchGitLabRawFile(apiBase, token, blobUrl) {
-  const parsed = parseGitLabBlobUrl(blobUrl);
+async function fetchGitLabRawFile(apiBase, token, blobUrl, host) {
+  const parsed = parseGitLabBlobUrl(blobUrl, host);
   if (!parsed) throw new Error(`Unrecognized GitLab blob URL: ${blobUrl}`);
   const project = encodeURIComponent(parsed.projectPath);
   const filePath = encodeURIComponent(parsed.filePath);
@@ -180,14 +144,6 @@ function detectGaSignals(combined) {
   return { gaCoverageRequired, gaHints: [...new Set(gaHints)] };
 }
 
-/** @param {string} text */
-function isGitLabOnlyDescription(text) {
-  const trimmed = text.trim();
-  if (!trimmed) return false;
-  const withoutUrls = trimmed.replace(/https?:\/\/git\.epam\.com\/[^\s)]+/gi, "").trim();
-  return withoutUrls === "";
-}
-
 /**
  * @param {string} outPath
  * @param {Record<string, unknown>} payload
@@ -236,13 +192,17 @@ async function main() {
   const sources = ["jira:description"];
   let combined = jiraText;
 
-  const gitlabUrls = uniqueGitLabBlobUrls(jiraText);
-  const gitlabOnly = isGitLabOnlyDescription(jiraText);
+  const gitlabHost = hostFromUrl(gitlabApi);
+  const confluenceHost = hostFromUrl(confluenceUrl);
+
+  const gitlabUrls = gitLabBlobUrls(jiraText, gitlabHost);
+  const gitlabOnly = isGitLabOnlyDescription(jiraText, gitlabHost);
 
   if (gitlabUrls.length > 0) {
     if (!gitlabApi || !gitlabToken) {
       const missing = [
-        !gitlabApi && "GITLAB_API_URL (Actions variable vars.GITLAB_API_URL, e.g. https://git.epam.com/api/v4)",
+        !gitlabApi &&
+          "GITLAB_API_URL (Actions variable vars.GITLAB_API_URL, e.g. https://gitlab.example.com/api/v4)",
         !gitlabToken &&
           "GITLAB_PERSONAL_ACCESS_TOKEN (Actions secret secrets.GITLAB_PERSONAL_ACCESS_TOKEN)",
       ].filter(Boolean);
@@ -258,7 +218,7 @@ async function main() {
     }
     for (const url of gitlabUrls) {
       try {
-        const body = await fetchGitLabRawFile(gitlabApi, gitlabToken, url);
+        const body = await fetchGitLabRawFile(gitlabApi, gitlabToken, url, gitlabHost);
         combined += `\n\n${body}`;
         sources.push(`gitlab:${url}`);
       } catch (e) {
@@ -275,7 +235,7 @@ async function main() {
     }
   }
 
-  const nestedConfluenceUrls = uniqueConfluencePageUrls(combined);
+  const nestedConfluenceUrls = confluencePageUrls(combined, confluenceHost);
   if (confluenceUrl && confluenceToken && confluenceEmail && nestedConfluenceUrls.length > 0) {
     const seenIds = new Set();
     for (const pageUrl of nestedConfluenceUrls) {

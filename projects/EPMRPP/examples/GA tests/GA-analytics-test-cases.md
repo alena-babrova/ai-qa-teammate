@@ -1,6 +1,6 @@
 # Test cases: GA analytics — reference suite
 
-Curated from linked Jira **Test** issues for Google Analytics / `collect` payload verification. Use with **`test-case-examples/CONTEXT.md`** and **`.cursor/rules/jira-test-cases-epmrpp-style.mdc`** when a story requires **GA.** coverage.
+Curated from linked Jira **Test** issues for Google Analytics / `collect` payload verification. Use with **`CONTEXT.md`** and **`PROJECT.md`** in this pack when a story requires **GA.** coverage.
 
 **Sample sources (Jira Tests):**
 

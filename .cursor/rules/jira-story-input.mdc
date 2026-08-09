@@ -1,0 +1,159 @@
+---
+description: Read-only Jira story input (STORY_KEY, pre-generation gate, linked Confluence/Figma/GitLab specs, empty story) and the Markdown output contract for generated test cases
+alwaysApply: true
+---
+
+# Jira story input and generated output
+
+The Jira issue is an **input only**. The deliverable is a **Markdown** file of test cases written under **`generated/jira-tests/<STORY_KEY>/`** and published as a CI artifact.
+
+## Read-only Jira — no writes, ever
+
+**Never** create, update, transition, link, label, or comment on **any** Jira issue during test generation.
+
+- **Do not** call **`jira_create_issue`**, **`jira_update_issue`**, **`jira_add_comment`**, **`jira_create_issue_link`**, **`jira_transition_issue`**, or any other mutating tool—on the story, on Sub-tasks, or on **`Test`** issues.
+- **Do not** create Jira **`Test`** issues, set test-management custom fields, attach Tests to a Test Library or Folder, or post a completion summary anywhere in Jira.
+- Jira MCP, Confluence MCP, GitLab MCP, and Figma MCP are used for **reads** only.
+- The same applies to REST: **`scripts/jira-client.js`** exposes read helpers only.
+
+If a user asks for Jira Tests to be filed, say the pipeline is read-only and hand them the generated Markdown.
+
+## Always use **STORY_KEY** — verify first
+
+- **CI:** **`ISSUE_KEY`** = dispatch target; **`STORY_KEY`** = workflow-resolved story (parent when the target is a Sub-task). If they **differ**, **`ISSUE_KEY`** is **trigger only**. Scope: **`jira_get_issue(STORY_KEY)`** only — description, summary (title context), AC/DoD fields. The output folder **`generated/jira-tests/<STORY_KEY>/`** and the Markdown filename use **`STORY_KEY`**; test case **titles** must **not** contain **`STORY_KEY`** or the Sub-task **`ISSUE_KEY`** (**`.cursor/rules/test-case-style.mdc`**).
+- **IDE:** The user may paste a Sub-task. **`jira_get_issue`** → if Sub-task, **`STORY_KEY = parent.key`**, then fetch the story. Never use Sub-task **description**/**summary** for scenarios when the story is the parent.
+
+## Pre-generation MCP gate (before any tests)
+
+**Before** authoring test cases or writing any file under **`generated/jira-tests/<STORY_KEY>/`**, use **Jira MCP** to call **`jira_get_issue(STORY_KEY)`** (or equivalent) and load at least Jira **`summary`**, **`description`**, **`priority`**, **`issuetype`**, **`parent`**, and AC/DoD-style fields if available.
+
+- **Gate passes** when: the MCP call **succeeds**; the Jira issue **`summary`** (the **issue title** in Jira) is a **non-empty** string; **`description`** is **present** in the response (value may be null, empty, or empty ADF).
+- **Only after the gate passes:** derive tests, write the Markdown file and **`meta.json`**, or apply **Empty story** (below) if description + AC are genuinely empty.
+
+**Failed gate (MCP error, missing tool, auth/network failure, missing/empty Jira `summary`):** **CI must fail.** **Do not** write the Markdown file or **`meta.json`**. **`scripts/verify-generated-tests.js`** exits non-zero when the Markdown file is missing under **`generated/jira-tests/<STORY_KEY>/`**, so GitHub Actions shows the job **failed** (red). **Never** write an empty deliverable to simulate success.
+
+## Jira fetch required (not the same as empty story)
+
+- **Empty story** (below) applies **only** after **`jira_get_issue(STORY_KEY)`** **succeeds** (gate passed) and you have **actually read** the story’s **description** and AC/DoD-style fields from the response.
+- If **Jira MCP is unavailable**, **`jira_get_issue`** **fails**, or the **gate** does not pass: **do not** treat that as an empty story and **do not** produce a result that looks like a successful empty-story outcome.
+- **CI:** Use **Generate Test Cases** on GitHub Actions (rendered **`.cursor/mcp.json`** + secrets) or **Cursor IDE** with working Jira MCP. If you cannot pass the gate, **omit** the output files so **`scripts/verify-generated-tests.js`** fails; **never** substitute guesses or Sub-task text for the story body.
+
+## Story-linked Confluence, Figma, and GitLab (MCP reads)
+
+**After** the **Pre-generation MCP gate** passes, **before** you finalize test coverage, check whether the story references **Confluence**, **Figma**, or **GitLab** by URL.
+
+**Where to look:** Jira **`description`** (plain text or extract link targets from ADF if your tools support it), AC/DoD-style custom fields, and—if you fetch them via Jira MCP—**comments** on **`STORY_KEY`**.
+
+### When Confluence links appear
+
+- Typical signals: hostnames or paths for your Confluence instance (e.g. **`/wiki/`**, **`confluence.`**, org knowledge-base hosts), page links embedded in the description or AC.
+- Use **Confluence** read/search tools from the **Atlassian MCP** server (**`atlassian`** in **`.cursor/mcp.json`**). Exact tool names depend on the server build—use whatever Confluence tools the session exposes (get page, search, etc.).
+- **Read-only:** pull content needed to understand acceptance criteria, flows, or copy **referenced by the link**. **Do not** invent details that exist only on the linked page without fetching it when the link is present and MCP is available.
+- **Minimize calls:** Deduplicate URLs; **one** successful read per **distinct** page is enough—**do not** re-fetch the same page, run broad Confluence searches, or open linked child pages unless the story explicitly links to them.
+
+### When Figma links appear
+
+- Typical signals: **`figma.com`** URLs (e.g. **`/file/`**, **`/design/`**) including file key and, when present, node/frame identifiers. URLs may appear only in **fetched** GitLab or Confluence requirement files—not only in the Jira **`description`**.
+- **`figmaReadRequired`:** When **`requirement-signals.json`** has **`figmaReadRequired`: true** (CI: **`scripts/extract-requirement-signals.js`** after merging Jira + linked specs) **or** you discover any **`figma.com`** URL in loaded requirements, Figma reads are **mandatory**—not optional.
+- Use tools from the **Figma MCP** server (**`acuvity-mcp-server-figma`** in **`.cursor/mcp.json`**). Use whatever read tools the session exposes so UI-oriented tests align with design intent (layout, labels, states) when the story points to a file or frame.
+- **Minimize Figma API calls (reduces 429 rate limits):**
+  - **Collect first:** Parse the story once; list **unique** file keys (and node ids if present). **Deduplicate** identical URLs.
+  - **Prefer fewer, wider reads:** If a tool can return a **whole file** or **multiple nodes in one call**, use that instead of many small calls. **Do not** enumerate every frame or component “to be thorough.”
+  - **One success per file key:** After a call returns usable data for a file, **do not** call Figma again for the same file key unless the first response was empty or clearly incomplete.
+  - **No exploration:** **Do not** use Figma MCP to browse, search, or open files **not** linked from the story text.
+- **No Figma visibility → no tests:** When **`figmaReadRequired`** applies, you **must** successfully read **every** required file key via Figma MCP **before** authoring test cases. If Figma cannot be read (auth, 403, 429, timeout, empty/unusable payload, MCP unavailable): **hard stop**—do **not** write the Markdown deliverable, do **not** write **`meta.json`**. Write **`generated/jira-tests/<STORY_KEY>/figma-read-failure.json`** with **`figmaReadRequired`**, **`figmaFileKeys`**, and **`failureReason`** (no secrets). Let CI fail.
+- **No invented UI:** When **`figmaReadRequired`** applies, do **not** invent control names, breadcrumbs, menus, modal copy, or layout in steps/expected from Jira/GitLab/Gherkin alone. UI inventory must come from **successful** Figma MCP reads plus explicit written AC (e.g. button labels stated in the spec). **GA.** / **API.** cases still follow their specs when Figma is unrelated.
+- **Success:** Include **`figmaFileKeysRead`** in **`meta.json`**—array of every required Figma **file key** successfully read via MCP (same set as **`requirement-signals.json`** **`figmaFileKeys`**). **`scripts/verify-generated-tests.js`** enforces the Figma gate when **`figmaReadRequired`** is true.
+
+### When GitLab links appear
+
+- Typical signals: GitLab URLs on your instance—e.g. **`/-/blob/`** links to requirement **Markdown** or other docs, merge requests, issues, or snippets embedded in the description or AC.
+- Use tools from the **GitLab MCP** server (**`gitlab`** in **`.cursor/mcp.json`**). Exact tool names depend on the server build—use whatever read tools the session exposes to retrieve **file or document content** (and minimal supporting metadata if required) for resources **referenced by the story link**.
+- **Read-only:** pull content needed for acceptance criteria, flows, or copy **referenced by the link**. **Do not** invent details that exist only in the linked GitLab resource without fetching it when the link is present and MCP is available.
+- **Minimize calls:** Deduplicate URLs; **one** successful read per **distinct** linked URL unless the first response is empty or clearly incomplete. **Do not** list entire repositories, walk unrelated directory trees, search broadly, or open projects/files **not** linked from the story (same spirit as Figma **no exploration**).
+- **CI extract (before agent):** **`scripts/extract-requirement-signals.js`** fetches every GitLab `/-/blob/` URL in the Jira **`description`** via GitLab REST. Missing **`GITLAB_API_URL`** / **`GITLAB_PERSONAL_ACCESS_TOKEN`** or **any** fetch error **fails the workflow** before the agent (`requirementsReadFailed: true` in **`requirement-signals.json`**). Distinct from optional Confluence/GitLab **MCP** read failures during agent execution (below).
+
+After a **successful** read of a story-linked **GitLab** or **Confluence** file, **also read** distinct **Confluence** or **Figma** URLs that appear **in that document** when they are cited as authoritative for **Analytics (GA4)**, **acceptance criteria**, or **design** (e.g. **Design / Figma** tables, UI mockup links). **One read per distinct URL**; same minimization as above—not open-ended repo or space crawling.
+
+### If there are no such links
+
+- **Do not** call Confluence, Figma, or GitLab MCP for exploration unrelated to URLs found on the story.
+
+### If links exist but MCP read fails
+
+- **Figma (mandatory when linked):** When **`figmaReadRequired`** applies, a failed or skipped Figma MCP read is a **failed run**—follow **No Figma visibility → no tests** above.
+- **Confluence / GitLab (optional on failure):** Optional context only—**do not** fail the whole run or treat this as a failed **Pre-generation MCP gate** for Confluence/GitLab alone. Complete tests from Jira text when only those reads fail.
+- **Streamed / assistant-visible output (CI log and IDE):** When a **Confluence** or **GitLab** MCP call fails—**including HTTP 429**, rate limits, timeouts, or auth errors—**do not** narrate the failure in your reply. **Do not** quote status codes (**`429`**, **`403`**, etc.), provider error payloads, or hedging lines such as *“Confluence unavailable; using Jira only”*. Proceed with the next useful step (e.g. Jira MCP) **without** announcing that you are falling back or why linked specs were skipped.
+
+## Empty story — **do not** invent tests
+
+**No testable content** when **description** is empty (incl. empty ADF) **and** AC/DoD-style fields you fetched are empty—**after** the **Pre-generation MCP gate** passed. **Jira `summary` alone** is not enough to invent scenarios when description + AC are empty.
+
+Then write the Markdown file with the header and a short note that the story has no testable content (**no** fabricated **`##`** cases), and **`meta.json`** with **`"caseCount": 0`** and **`"empty": true`**.
+
+## Output contract
+
+**Only** **`generated/jira-tests/<STORY_KEY>/`**. **`STORY_KEY`** = story used for requirements (in CI: parent when the input was a Sub-task).
+
+```
+generated/jira-tests/<STORY_KEY>/
+  <STORY_KEY>-test-cases.md    # the deliverable
+  meta.json                    # run metadata
+  requirement-signals.json     # written by CI before the agent (do not edit)
+```
+
+### `<STORY_KEY>-test-cases.md`
+
+```markdown
+# Test cases: <STORY_KEY> — <story summary from Jira>
+
+**User story:** <JIRA_URL>/browse/<STORY_KEY>
+
+---
+
+## <Title>
+
+*Preconditions:*
+…
+
+*Steps:*
+…
+
+*Expected results:*
+…
+
+---
+```
+
+- One **`##`** heading = **one** discrete test case, each with *Preconditions*, *Steps*, and *Expected results*.
+- **`STORY_KEY`** (and a differing Sub-task **`ISSUE_KEY`**) must **not** appear in any **`##`** title.
+- Format details: **`.cursor/rules/test-case-style.mdc`**, plus the active project pack when one exists (**`projects/<PROJECT_KEY>/PROJECT.md`**).
+
+### `meta.json`
+
+```json
+{
+  "storyKey": "PROJ-123",
+  "projectKey": "PROJ",
+  "projectPack": "projects/PROJ",
+  "caseCount": 12,
+  "empty": false,
+  "figmaFileKeysRead": ["PxNk9h6CS9Y4Mxcl2fS9HF"]
+}
+```
+
+- **`caseCount`** must equal the number of **`##`** cases in the Markdown file.
+- **`projectPack`** is the pack folder used, or **`null`** when the project has no pack.
+- **`figmaFileKeysRead`:** when **`requirement-signals.json`** has **`figmaReadRequired`: true**, required on successful runs—unique Figma **file keys** successfully read via MCP (must match **`figmaFileKeys`** in signals). Omit when Figma was not required.
+
+## Project packs (optional styling)
+
+A project may ship a pack at **`projects/<PROJECT_KEY>/`** (**`PROJECT_KEY`** = the part of **`STORY_KEY`** before the dash), containing **`PROJECT.md`** plus optional **`CONTEXT.md`** and **`examples/`**. When the folder exists, follow it **in addition to** **`.cursor/rules/test-case-style.mdc`**; its instructions **win** on conflict. When it does not exist, use the generic style rule alone and do **not** borrow another project’s vocabulary. See **`projects/README.md`**.
+
+## Cursor Agent CLI (headless)
+
+Run **`cursor-agent` / `agent`** **only** in **GitHub Actions** for this repo’s generate workflow (**`--trust`**, **`--approve-mcps`**, **`--force`**). **Do not** add scripts/docs that run the headless agent locally. **No** blocking questions. **Before** the agent, CI runs **`scripts/extract-requirement-signals.js`** → **`generated/jira-tests/<STORY_KEY>/requirement-signals.json`** (GA / linked-spec signals). **After** the agent, **`scripts/verify-generated-tests.js`** validates the Markdown deliverable and enforces GA and Figma coverage. **Style:** **`.cursor/rules/test-case-style.mdc`**; **shape:** **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**. MCP setup: **`docs/GITHUB_SECRETS.md`**, **`docs/JIRA_MCP_OPTIONS.md`**, **`npm run render-mcp`**.
+
+## Safety
+
+- **Never** put secrets or tokens under **`generated/`** or in repo files.

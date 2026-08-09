@@ -26,7 +26,7 @@ describe("validateFigmaRead", () => {
       path.join(tmpDir, "figma-read-failure.json"),
       JSON.stringify({ failureReason: "MCP timeout" }),
     );
-    const err = validateFigmaRead(tmpDir, { tests: [{ summary: "x" }] }, null);
+    const err = validateFigmaRead(tmpDir, [{ title: "x", body: "" }], null);
     assert.match(err, /Figma design gate failed/);
   });
 });

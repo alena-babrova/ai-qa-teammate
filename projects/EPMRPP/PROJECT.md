@@ -1,19 +1,27 @@
----
-description: EPMRPP conventions for Jira-derived manual test cases (titles, steps, expected results, API, GA)
-alwaysApply: true
----
+# EPMRPP (Report Portal) — project pack
 
-# Jira-derived test cases — EPMRPP style
+Applies to stories whose key starts with **`EPMRPP`**. Read together with **`.cursor/rules/test-case-style.mdc`**; where the two differ, **this file wins**.
 
-## When this applies
+For **granularity, coverage splits, and tone**, read **`CONTEXT.md`** in this folder and the matching full suites under **`examples/`**.
 
-Whenever you **author** manual test cases from a Jira story (Markdown or **`tests.json`** fields), match the conventions below. **Format only** — Jira fetch, **`STORY_KEY`**, and CI manifests are in **`.cursor/rules/jira-test-issues.mdc`** and **`.cursor/skills/jira-story-test-cases-md/SKILL.md`**. For **granularity, coverage splits, and tone**, read **`test-case-examples/CONTEXT.md`** and matching **`tests/EPMRPP-*-test-cases.md`** files. **Very optional:** when planning coverage, search the story’s **Epic** for **Closed** sibling stories and read linked **`Test`** issues from the closest matches; otherwise a small **Test** library JQL sample—see skill → **Investigating coverage in Jira**.
+| Example file | Use when the story is similar to |
+|--------------|-----------------------------------|
+| `examples/tests/EPMRPP-89670-test-cases.md` | Organization-level UI page layout, table columns, pagination, permissions matrix |
+| `examples/tests/EPMRPP-91802-test-cases.md` | Instance-level modal CRUD, field validation, org/project assignment, GA events |
+| `examples/tests/EPMRPP-105682-test-cases.md` | Invitation / registration flow, email link activation, redirect after signup |
+| `examples/tests/EPMRPP-111251-test-cases.md` | Filters side panel, filter combinations, “All Filters” UX, autocomplete fields |
+| `examples/tests/EPMRPP-108273-test-cases.md` | Table customization (columns modal, localStorage, reset to default) |
+| `examples/tests/EPMRPP-114379-test-cases.md` | Org settings integrations page, mixed UI + API + GA coverage |
+| `examples/tests/EPMRPP-114952-test-cases.md` | Global plugin integration CRUD, validation, connection states, API permissions |
+| `examples/tests/EPMRPP-114989-test-cases.md` | Project-level plugin page, empty vs configured states, device list |
+| `examples/tests/EPMRPP-93348-test-cases.md` | REST API endpoint, role/org-type permission matrix, error codes |
+| `examples/tests/EPMRPP-99095-test-cases.md` | REST API partial update, field validation, slug/name rules, auth errors |
+| `examples/GA tests/GA-analytics-test-cases.md` | Google Analytics — `collect` payload, GA ON/OFF pairs, scope in title (Instance / Organization / Project level) |
 
-**Test case titles** (Markdown **`##`**, Jira Test **Summary**, **`tests[].summary`**) must **not** include the User Story issue key (**`STORY_KEY`**) or a Sub-task dispatch key when it differs from **`STORY_KEY`**. Traceability comes from the output folder **`generated/jira-tests/<STORY_KEY>/`** and Jira **links**, not from the title text.
+**Very optional:** when planning coverage, search the story’s **Epic** for **Closed** sibling stories and read linked **`Test`** issues from the closest matches (read-only); otherwise a small **`Test`** library JQL sample—see the skill → **Investigating coverage in Jira**.
 
 ## Summary line (title)
 
-- **GitHub Actions / `tests.json`:** **`tests[].summary`** is the human-readable test title only—**no** **`STORY_KEY`**, **`[STORY-123]`**, or **`STORY-123 —`** prefixes (and **no** Sub-task **`ISSUE_KEY`** in the title when it differs from **`STORY_KEY`**).
 - **UI / functional:** `<Area>. <Page>. <Behavior>` — segments separated by **period + space**.
 - **Page naming:** Either `Projects page` or `"Projects"` page (quoted page name when it matches the nav label); modal/feature names in **double quotes** (`"Rename project"`).
 - **Permissions:** Insert an extra segment: `<Area>. <Page>. Permissions. <Behavior>` (e.g. Admin not assigned to project can still rename).
@@ -44,15 +52,15 @@ Whenever you **author** manual test cases from a Jira story (Markdown or **`test
 - **Several checks for one step:** Put **one** step number and group detail under it using sub-bullets (` - ` or `*`), e.g. after step 4 “Observe the modal”, use **`4.`** with bullets for *Name* field, *Cancel*, *Create*, close icon — **not** new top-level `5.`, `6.`, `7.`.
 - **Bullets:** use ` - ` (space-hyphen-space) **or** leading `*` lines (`* Team`) depending on reference; stay consistent within one test case.
 - UI inventory: control names in **double quotes**, **enabled** / **disabled** / **default**, success toasts (e.g. green bar text in quotes).
-- **Figma-linked stories:** When requirements include **`figma.com`** URLs and **`figmaReadRequired`** applies (**`jira-test-issues.mdc`**), do **not** author UI control/layout inventory in expected results unless Figma was **successfully** read via MCP. When Figma was read, prefer design-backed control names for UI cases; do not invent breadcrumbs, menus, or chrome not grounded in design + explicit AC.
+- **Figma-linked stories:** When requirements include **`figma.com`** URLs and **`figmaReadRequired`** applies (**`.cursor/rules/jira-story-input.mdc`**), do **not** author UI control/layout inventory in expected results unless Figma was **successfully** read via MCP. When Figma was read, prefer design-backed control names for UI cases; do not invent breadcrumbs, menus, or chrome not grounded in design + explicit AC.
 
 ## GA tests
 
-- Summary starts with **`GA.`**; include **scope** and **page** before the action.
+- Title starts with **`GA.`**; include **scope** and **page** before the action.
 - **Scope segment** (after `GA.`): **`Instance level`**, **`Project level`**, or area prefix such as **`Organizations.`** / **`Organizations. <Page>.`** when the scenario is org- or project-scoped (sidebar, Project Team). Match linked Jira Tests for the same feature.
 - **Behavior in title:** `GA is sent …` for Analytics ON; **`Set GA OFF`**, **`GA OFF`**, or **`GA is not sent … when GA OFF`** for negative cases. One user action (or one verification point) per positive test when possible; combine multiple OFF checks in one test only when the team already does (comma-separated step numbers in expected).
 - **Preconditions:** `Analytics is ON on the instance` / `GA is ON` or `GA is OFF` / `Analytics is OFF in Server Settings`; **`Browser Dev tools are opened`** (optionally **Network tab**). Project-level cases: plugin/integration preconditions (e.g. Mobitru installed, no integration on `'Project1'`). Role/level: `Instance level is opened`, `Organization level is opened`, `Project level is opened`, collapsed sidebar when testing **sidebar_hover**.
 - **Steps:** Perform the UI action, then **`Check the data in the Request Payload of "collect" HTTP request in Browser Dev tools`** (repeat after each action when multiple events are asserted). Steps may use **`# `** lines or **`1.`** numbering—stay consistent within one test.
 - **Expected results:** Map step numbers to the **collect** check step(s). **Positive:** `The collect request contains the following data:` (or `The request contains the following data:`) then list payload fields; emphasize event dimensions with `*category:*`, `*place:*`, `*element_name:*`, `*icon_name:*`, `*link_name:*`, `*modal:*`, `en: page_view` as in Jira. Include common context fields when the suite does: `instanceID`, `version`, `uid`, `timestamp`, `organization_id`, `project_id`, `auto_analysis`, `pattern_analysis`, `kind`. **Negative:** `GA event is not sent - "collect" HTTP request is not displayed in Browser Dev tools` or `GA is not sent. "collect" HTTP request is not displayed in Browser Dev tools`; use **`4, 6.`** style when one test covers multiple check steps.
 - **Plugins / instance detail:** Match linked suite titles (e.g. **`GA. Plugins. …`**) and KB **`place`** values (e.g. **`instance_plugin_detail`**) from the story or GA4 spec—do not invent alternate **`place`** patterns.
-- **Full examples:** **`test-case-examples/GA tests/GA-analytics-test-cases.md`**; additional GA cases in **`tests/EPMRPP-91802-test-cases.md`** and **`tests/EPMRPP-114379-test-cases.md`**.
+- **Full examples:** **`examples/GA tests/GA-analytics-test-cases.md`**; additional GA cases in **`examples/tests/EPMRPP-91802-test-cases.md`** and **`examples/tests/EPMRPP-114379-test-cases.md`**.

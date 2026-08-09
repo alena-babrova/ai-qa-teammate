@@ -1,6 +1,7 @@
 /**
- * Minimal Jira Server/DC REST client (Basic auth).
- * Uses REST API v2 only (`/rest/api/2/...`) — wiki markup string for comment `body`.
+ * Minimal read-only Jira Server/DC REST client (Basic auth).
+ * Uses REST API v2 only (`/rest/api/2/...`). This pipeline never writes to Jira, so no
+ * create/update/comment helpers are exposed here.
  */
 
 import { Buffer } from "buffer";
@@ -11,18 +12,13 @@ export function createJiraClient(opts) {
   const base = baseUrl.replace(/\/+$/, "");
   const auth = Buffer.from(`${email}:${apiToken}`, "utf8").toString("base64");
 
-  async function request(method, apiPath, body) {
+  async function request(method, apiPath) {
     const url = `${base}/rest/api/2${apiPath}`;
     const headers = {
       Authorization: `Basic ${auth}`,
       Accept: "application/json",
-      "Content-Type": "application/json",
     };
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    const res = await fetch(url, { method, headers });
     const text = await res.text();
     let json;
     try {
@@ -53,26 +49,6 @@ export function createJiraClient(opts) {
         fields: fields.join(","),
       });
       return request("GET", `/search?${params.toString()}`);
-    },
-    async createIssue(fields) {
-      return request("POST", "/issue", { fields });
-    },
-    async createIssueLink(typeName, inwardKey, outwardKey) {
-      return request("POST", "/issueLink", {
-        type: { name: typeName },
-        inwardIssue: { key: inwardKey },
-        outwardIssue: { key: outwardKey },
-      });
-    },
-    async updateIssue(issueKey, fields) {
-      return request("PUT", `/issue/${encodeURIComponent(issueKey)}`, {
-        fields,
-      });
-    },
-    async addComment(issueKey, bodyText) {
-      return request("POST", `/issue/${encodeURIComponent(issueKey)}/comment`, {
-        body: bodyText,
-      });
     },
   };
 }

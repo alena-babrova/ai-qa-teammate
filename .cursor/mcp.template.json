@@ -20,6 +20,8 @@
         "JIRA_API_TOKEN",
         "-e",
         "JIRA_PERSONAL_TOKEN",
+        "-e",
+        "READ_ONLY_MODE",
         "ghcr.io/sooperset/mcp-atlassian:latest"
       ],
       "env": {
@@ -29,7 +31,8 @@
         "JIRA_URL": "${JIRA_URL}",
         "JIRA_USERNAME": "${JIRA_USERNAME}",
         "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
-        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
+        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}",
+        "READ_ONLY_MODE": "true"
       }
     },
     "acuvity-mcp-server-figma": {
