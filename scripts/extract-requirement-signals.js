@@ -272,6 +272,7 @@ async function main() {
         figmaReadRequired: true,
         figmaUrls,
         figmaFileKeys,
+        figmaNodeIdsByFileKey,
       });
     }
     for (const fileKey of figmaFileKeys) {
@@ -292,6 +293,7 @@ async function main() {
           figmaReadRequired: true,
           figmaUrls,
           figmaFileKeys,
+          figmaNodeIdsByFileKey,
         });
       }
     }
@@ -308,6 +310,7 @@ async function main() {
     figmaReadRequired,
     figmaUrls,
     figmaFileKeys,
+    figmaNodeIdsByFileKey,
   };
 
   fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
