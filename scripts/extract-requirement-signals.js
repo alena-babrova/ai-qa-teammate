@@ -253,7 +253,8 @@ async function main() {
   }
 
   const { gaCoverageRequired, gaHints } = detectGaSignals(combined);
-  const { figmaUrls, figmaFileKeys, figmaReadRequired } = extractFigmaSignals(combined);
+  const { figmaUrls, figmaFileKeys, figmaNodeIdsByFileKey, figmaReadRequired } =
+    extractFigmaSignals(combined);
 
   const figmaToken = process.env.FIGMA_API_KEY?.trim();
 
@@ -274,8 +275,9 @@ async function main() {
       });
     }
     for (const fileKey of figmaFileKeys) {
+      const nodeIds = figmaNodeIdsByFileKey[fileKey] ?? [];
       try {
-        await figmaRestPreflightFile(figmaToken, fileKey);
+        await figmaRestPreflightFile(figmaToken, fileKey, nodeIds);
         sources.push(`figma:preflight:${fileKey}`);
       } catch (e) {
         const msg = e.message || String(e);
