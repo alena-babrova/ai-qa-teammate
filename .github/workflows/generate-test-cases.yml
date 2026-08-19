@@ -66,6 +66,13 @@ jobs:
           echo "${LINE}" >> "${GITHUB_ENV}"
           echo "Normalized: ${LINE}"
 
+      - name: "1. Verify — log pipeline inputs"
+        run: |
+          MODEL="$(node scripts/resolve-cursor-agent-model.js)"
+          echo "Jira ticket: ${ISSUE_KEY}"
+          echo "Cursor Agent model: ${MODEL}"
+          echo "::notice title=Pipeline inputs::Jira ticket ${ISSUE_KEY}; model ${MODEL}"
+
       - name: "1. Verify — Jira variables and secrets"
         run: |
           if [ -z "${JIRA_URL}" ]; then
