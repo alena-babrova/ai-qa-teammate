@@ -15,6 +15,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { validateGaCoverage } from "./verify-ga-coverage.js";
 import { validateFigmaRead } from "./verify-figma-read.js";
+import { validateGitLabCoverage } from "./verify-gitlab-coverage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -203,6 +204,15 @@ function main() {
   );
   if (gaErr) {
     console.error(gaErr);
+    process.exit(1);
+  }
+
+  const gitlabErr = validateGitLabCoverage(
+    fs.existsSync(path.join(canonicalDir, "requirement-signals.json")) ? canonicalDir : outDir,
+    manifest,
+  );
+  if (gitlabErr) {
+    console.error(gitlabErr);
     process.exit(1);
   }
 

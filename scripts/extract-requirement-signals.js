@@ -76,6 +76,15 @@ function parseGitLabBlobUrl(url) {
   };
 }
 
+/** @param {string} url @param {number} index */
+function gitlabContentFilename(url, index) {
+  const parsed = parseGitLabBlobUrl(url);
+  if (!parsed) return `gitlab-requirement-${index + 1}.md`;
+  const base = path.basename(parsed.filePath, path.extname(parsed.filePath));
+  const safe = base.replace(/[^\w.-]+/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+  return `${safe || `gitlab-requirement-${index + 1}`}.md`;
+}
+
 /** @param {string} text */
 function uniqueConfluencePageUrls(text) {
   const urls = new Set();
@@ -238,6 +247,8 @@ async function main() {
 
   const gitlabUrls = uniqueGitLabBlobUrls(jiraText);
   const gitlabOnly = isGitLabOnlyDescription(jiraText);
+  /** @type {string[]} paths relative to outDir */
+  const gitlabContentFiles = [];
 
   if (gitlabUrls.length > 0) {
     if (!gitlabApi || !gitlabToken) {
@@ -253,14 +264,24 @@ async function main() {
         sources,
         gitlabUrls,
         gitlabOnlyDescription: gitlabOnly,
+        gitlabContentFiles,
         failureReason: `Jira description links GitLab requirement file(s) but missing: ${missing.join("; ")}`,
       });
     }
-    for (const url of gitlabUrls) {
+    const linkedReqDir = path.join(outDir, "linked-requirements");
+    fs.mkdirSync(linkedReqDir, { recursive: true });
+    for (let i = 0; i < gitlabUrls.length; i++) {
+      const url = gitlabUrls[i];
       try {
         const body = await fetchGitLabRawFile(gitlabApi, gitlabToken, url);
         combined += `\n\n${body}`;
         sources.push(`gitlab:${url}`);
+        const filename = gitlabContentFilename(url, i);
+        const relativePath = path.join("linked-requirements", filename);
+        const filePath = path.join(outDir, relativePath);
+        const header = `<!-- source: ${url} -->\n\n`;
+        fs.writeFileSync(filePath, `${header}${body}\n`, "utf8");
+        gitlabContentFiles.push(relativePath.replace(/\\/g, "/"));
       } catch (e) {
         failRequirementsRead(outPath, {
           storyKey,
@@ -269,6 +290,7 @@ async function main() {
           sources,
           gitlabUrls,
           gitlabOnlyDescription: gitlabOnly,
+          gitlabContentFiles,
           failureReason: `Failed to read GitLab requirements: ${e.message || e}`,
         });
       }
@@ -307,6 +329,7 @@ async function main() {
         "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot run Figma MCP",
       gitlabUrls,
       gitlabOnlyDescription: gitlabOnly,
+      gitlabContentFiles,
       figmaReadRequired: true,
       figmaUrls,
       figmaFileKeys,
@@ -321,6 +344,7 @@ async function main() {
     requirementsReadFailed: false,
     gitlabUrls,
     gitlabOnlyDescription: gitlabOnly,
+    gitlabContentFiles,
     figmaReadRequired,
     figmaUrls,
     figmaFileKeys,
@@ -328,7 +352,7 @@ async function main() {
 
   fs.writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   console.log(
-    `Wrote ${outPath} (gaCoverageRequired=${gaCoverageRequired}, figmaReadRequired=${figmaReadRequired}, hints=${gaHints.join(",") || "none"})`,
+    `Wrote ${outPath} (gaCoverageRequired=${gaCoverageRequired}, figmaReadRequired=${figmaReadRequired}, gitlabFiles=${gitlabContentFiles.length}, hints=${gaHints.join(",") || "none"})`,
   );
 }
 
