@@ -32,26 +32,3 @@ export function extractFigmaSignals(text) {
 
   return { figmaUrls, figmaFileKeys, figmaReadRequired };
 }
-
-/**
- * @param {string} token
- * @param {string} fileKey
- */
-export async function figmaRestPreflightFile(token, fileKey) {
-  const url = `https://api.figma.com/v1/files/${encodeURIComponent(fileKey)}`;
-  const res = await fetch(url, {
-    headers: { "X-Figma-Token": token },
-  });
-  const text = await res.text();
-  let body;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = null;
-  }
-  if (!res.ok) {
-    const err = body?.err || body?.message || text?.slice(0, 200) || res.statusText;
-    throw new Error(`Figma API HTTP ${res.status} for file ${fileKey}: ${err}`);
-  }
-  return body;
-}

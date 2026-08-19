@@ -12,7 +12,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createJiraClient } from "./jira-client.js";
-import { extractFigmaSignals, figmaRestPreflightFile } from "./figma-signals.js";
+import { extractFigmaSignals } from "./figma-signals.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -297,42 +297,20 @@ async function main() {
 
   const figmaToken = process.env.FIGMA_API_KEY?.trim();
 
-  if (figmaReadRequired) {
-    if (!figmaToken) {
-      failRequirementsRead(outPath, {
-        storyKey,
-        gaCoverageRequired,
-        gaHints,
-        sources,
-        failureReason:
-          "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot preflight or run Figma MCP",
-        gitlabUrls,
-        gitlabOnlyDescription: gitlabOnly,
-        figmaReadRequired: true,
-        figmaUrls,
-        figmaFileKeys,
-      });
-    }
-    for (const fileKey of figmaFileKeys) {
-      try {
-        await figmaRestPreflightFile(figmaToken, fileKey);
-        sources.push(`figma:preflight:${fileKey}`);
-      } catch (e) {
-        const msg = e.message || String(e);
-        failRequirementsRead(outPath, {
-          storyKey,
-          gaCoverageRequired,
-          gaHints,
-          sources,
-          failureReason: `Figma preflight failed: ${msg}`,
-          gitlabUrls,
-          gitlabOnlyDescription: gitlabOnly,
-          figmaReadRequired: true,
-          figmaUrls,
-          figmaFileKeys,
-        });
-      }
-    }
+  if (figmaReadRequired && !figmaToken) {
+    failRequirementsRead(outPath, {
+      storyKey,
+      gaCoverageRequired,
+      gaHints,
+      sources,
+      failureReason:
+        "Requirements include Figma link(s) but FIGMA_API_KEY is unset; cannot run Figma MCP",
+      gitlabUrls,
+      gitlabOnlyDescription: gitlabOnly,
+      figmaReadRequired: true,
+      figmaUrls,
+      figmaFileKeys,
+    });
   }
 
   const payload = {
